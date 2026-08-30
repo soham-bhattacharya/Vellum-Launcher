@@ -35,6 +35,14 @@
             android:contentDescription="@string/home_screen"
             />
 
+        <!-- Vellum's ambient layer is deliberately behind every interactive home element. -->
+        <app.lawnchair.vellum.VellumAmbientView
+            android:id="@+id/vellum_ambient"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:visibility="visible" />
+
         <!-- The workspace contains 5 screens of cells -->
         <!-- DO NOT CHANGE THE ID -->
         <com.android.launcher3.Workspace
@@ -58,6 +66,17 @@
             android:layout_height="@dimen/workspace_page_indicator_height"
             android:layout_gravity="bottom|center_horizontal"
             android:theme="@style/HomeScreenElementTheme" />
+
+        <app.lawnchair.vellum.VellumHaloView
+            android:id="@+id/vellum_halo"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="22dp"
+            android:layout_marginEnd="14dp"
+            android:contentDescription="@string/vellum_halo_description"
+            android:focusable="true"
+            android:importantForAccessibility="yes" />
 
         <app.lawnchair.views.EditModePageStrip
             android:id="@+id/edit_mode_page_strip"

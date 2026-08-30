@@ -112,7 +112,7 @@ fun About(
                 horizontalArrangement = Arrangement.Center,
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.ic_launcher_home_comp),
+                    painter = painterResource(id = R.drawable.ic_vellum_mark),
                     contentDescription = null,
                     modifier = Modifier
                         .size(72.dp)
@@ -151,7 +151,7 @@ fun About(
                             onClick = {},
                             onLongClick = {
                                 val commitUrl =
-                                    "https://github.com/LawnchairLauncher/lawnchair/commit/${BuildConfig.COMMIT_HASH}"
+                                    "https://github.com/soham-bhattacharya/Vellum-Launcher/commit/${BuildConfig.COMMIT_HASH}"
                                 context.startActivity(Intent(Intent.ACTION_VIEW, commitUrl.toUri()))
                             },
                         ),
@@ -271,4 +271,5 @@ fun About(
     }
 }
 
-private const val PRIVACY_POLICY = "https://lawnchair.app/privacy_policy"
+private const val PRIVACY_POLICY =
+    "https://github.com/soham-bhattacharya/Vellum-Launcher/blob/16-dev/PRIVACY.md"

@@ -139,8 +139,8 @@ final def isReleaseBuild = ciBuild
         || ciRef.endsWith("-stable"))
 final def devReleaseName = ciBuild ? "Dev.(#${ciRunNumber})" : "Dev.(${buildCommit})"
 
-final def version = "16"
-final def releaseName = "Development 5.1"
+final def version = "1.0"
+final def releaseName = "Bloom Preview 1"
 final def versionDisplayName = "${version}.${isReleaseBuild ? releaseName : devReleaseName}"
 final def majorVersion = versionDisplayName.split("\\.")[0]
 
@@ -150,11 +150,8 @@ final def quickstepMaxSdk = "36"
 android {
     namespace "com.android.launcher3"
     defaultConfig {
-        /*
-         * Lawnchair Launcher 16.0 Development 5.1
-         * see CONTRIBUTING.md#versioning-scheme
-         */
-        versionCode 16_00_01_05_01
+        /* Vellum Launcher 1.0 Bloom Preview 1, based on Lawnchair 16. */
+        versionCode 1_00_00_01
         versionName "${versionDisplayName}"
         buildConfigField "String", "VERSION_DISPLAY_NAME", "\"${versionDisplayName}\""
         buildConfigField "String", "MAJOR_VERSION", "\"${majorVersion}\""
@@ -227,7 +224,7 @@ android {
 
         debug {
             applicationIdSuffix ".debug"
-            resValue("string", "derived_app_name", "Lawnchair (Debug)")
+            resValue("string", "derived_app_name", "Vellum Preview")
 
             manifestPlaceholders.quickstepMinSdk = "0"
             manifestPlaceholders.quickstepMaxSdk = "100000"
@@ -236,7 +233,7 @@ android {
         }
 
         release {
-            resValue("string", "derived_app_name", "Lawnchair")
+            resValue("string", "derived_app_name", "Vellum")
             minifyEnabled true
             shrinkResources true
             pseudoLocalesEnabled false
@@ -267,17 +264,17 @@ android {
         }
 
         github {
-            applicationId 'app.lawnchair'
+            applicationId 'app.vellum.launcher'
             dimension "channel"
         }
 
         nightly {
-            applicationId 'app.lawnchair.nightly'
+            applicationId 'app.vellum.launcher.nightly'
             dimension "channel"
         }
 
         play {
-            applicationId "app.lawnchair.play"
+            applicationId "app.vellum.launcher.play"
             dimension "channel"
             isDefault true
         }
@@ -349,7 +346,7 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         def channel = variant.productFlavors.last().second
         variant.outputs.forEach { output ->
-            output.outputFileName.set("Lawnchair.${output.versionName.get()}.$channel.${variant.buildType}.apk")
+            output.outputFileName.set("Vellum.${output.versionName.get()}.$channel.${variant.buildType}.apk")
         }
 
         // Lawnchair-TODO: A better way to sync proto file to the IDE preventing missing or outdated result. Please remove if this is the best solution we have right now

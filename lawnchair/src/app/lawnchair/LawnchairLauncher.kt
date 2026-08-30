@@ -50,6 +50,9 @@ import app.lawnchair.ui.popup.LauncherOptionsPopup
 import app.lawnchair.ui.popup.LawnchairShortcut
 import app.lawnchair.util.getThemedIconPacksInstalled
 import app.lawnchair.util.unsafeLazy
+import app.lawnchair.vellum.VellumAmbientView
+import app.lawnchair.vellum.VellumHaloView
+import app.lawnchair.vellum.VellumWelcomeView
 import app.lawnchair.views.LawnchairFloatingSurfaceView
 import com.android.launcher3.AbstractFloatingView
 import com.android.launcher3.BaseActivity
@@ -105,6 +108,21 @@ class LawnchairLauncher : QuickstepLauncher() {
         WindowInsetsControllerCompat(window, rootView)
     }
     private val themeProvider by unsafeLazy { ThemeProvider.INSTANCE.get(this) }
+    private var vellumAmbientView: VellumAmbientView? = null
+    private var vellumHaloView: VellumHaloView? = null
+    private val vellumHomeStateListener = object : StateManager.StateListener<LauncherState> {
+        override fun onStateTransitionStart(toState: LauncherState) {
+            val isHome = toState == LauncherState.NORMAL
+            vellumAmbientView?.setHomeVisible(isHome)
+            vellumHaloView?.setHomeVisible(isHome)
+        }
+
+        override fun onStateTransitionComplete(finalState: LauncherState) {
+            val isHome = finalState == LauncherState.NORMAL
+            vellumAmbientView?.setHomeVisible(isHome)
+            vellumHaloView?.setHomeVisible(isHome)
+        }
+    }
     private val noStatusBarStateListener = object : StateManager.StateListener<LauncherState> {
         override fun onStateTransitionStart(toState: LauncherState) {
             if (toState is OverviewState) {
@@ -167,6 +185,7 @@ class LawnchairLauncher : QuickstepLauncher() {
             defaultOverlay.setEnableFeed(enable)
         }.launchIn(scope = lifecycleScope)
         launcher.stateManager.addStateListener(clearSearchStateListener)
+        initializeVellumExperience()
 
         if (prefs.autoLaunchRoot.get()) {
             lifecycleScope.launch {
@@ -498,6 +517,8 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     override fun onDestroy() {
+        vellumAmbientView?.unbindWorkspace()
+        stateManager.removeStateListener(vellumHomeStateListener)
         super.onDestroy()
         // Only actually closes if required, safe to call if not enabled
         SmartspacerClient.close()
@@ -539,6 +560,18 @@ class LawnchairLauncher : QuickstepLauncher() {
                 predictedContainers.forEach(::bindPredictedContainerInfo)
             }
         }
+    }
+
+    private fun initializeVellumExperience() {
+        vellumAmbientView = findViewById<VellumAmbientView>(R.id.vellum_ambient).also {
+            it.bindWorkspace(workspace)
+        }
+        vellumHaloView = findViewById(R.id.vellum_halo)
+        stateManager.addStateListener(vellumHomeStateListener)
+        val isHome = isInState(LauncherState.NORMAL)
+        vellumAmbientView?.setHomeVisible(isHome, animate = false)
+        vellumHaloView?.setHomeVisible(isHome, animate = false)
+        VellumWelcomeView.showIfNeeded(dragLayer)
     }
 
     /**

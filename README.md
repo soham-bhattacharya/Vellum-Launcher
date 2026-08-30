@@ -1,121 +1,69 @@
-# Lawnchair 16
-
-[![Build debug APK](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/ci.yml/badge.svg)](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/ci.yml)
-[![Build release APK](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/release_update.yml/badge.svg)](https://github.com/LawnchairLauncher/lawnchair/actions/workflows/release_update.yml)
-[![Crowdin](https://badges.crowdin.net/e/188ba69d884418987f0b7f1dd55e3a4e/localized.svg)](https://lawnchair.crowdin.com/lawnchair)
-[![OpenCollective](https://img.shields.io/opencollective/all/lawnchair?label=financial%20contributors&logo=open-collective)](https://opencollective.com/lawnchair)
-[![Telegram](https://img.shields.io/endpoint?url=https%3A%2F%2Ftg.sumanjay.workers.dev%2Flccommunity)](https://t.me/lccommunity)
-[![Discord](https://img.shields.io/discord/803299970169700402?label=server&logo=discord)](https://discord.gg/3x8qNWxgGZ)
-[![GitHub Downloads](https://img.shields.io/github/downloads/LawnchairLauncher/lawnchair/total.svg?label=GitHub%20Downloads&logo=github)](https://github.com/LawnchairLauncher/lawnchair/releases)
-[![Play Store Installs](https://img.shields.io/endpoint?color=green&logo=googleplay&logoColor=green&url=https%3A%2F%2Fplay.cuzi.workers.dev%2Fplay%3Fi%3Dapp.lawnchair.play%26l%3DPlay%2520Store%2520Installs%26m%3D%24shortinstalls)](https://play.google.com/store/apps/details?id=app.lawnchair.play)
-
-> [!WARNING]
-> This branch contains major changes from the rebase of Launcher3, including changes that can cause
-> Lawnchair to crash or break.
->
-> For regular users, we recommend staying on *Lawnchair 15 Beta 3*.
-
-<picture>
-    <!-- Avoid image being clickable with slight workaround -->
-    <!-- ❤️ Credit to simonppt for the current mockup on Unsplash 
-            https://unsplash.com/photos/a-white-flower-with-green-leaves-on-a-white-background-ojBNiaeykwc
-    -->
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/device-frame.webp" width="250px">
-    <img alt="A device running Lawnchair Launcher with green flower wallpaper" src="docs/assets/device-frame.webp" width="250px">
-</picture>
-
-Lawnchair is a free, open-source home app for Android. Taking Launcher3—Android’s default home app—as a starting point, it ports Pixel Launcher features and introduces rich customization options.
-
-This branch houses the codebase of Lawnchair 16, which is currently in development and is based on Launcher3 from Android 16. For Lawnchair 9 to 15, see the branches with the `9-` to `15-` prefixes, respectively.
-
-## Features
-
-- Material 3 Expressive theming that follows your wallpaper and system colors.
-- At a Glance widget support, with integration for [Smartspacer](https://github.com/KieronQuinn/Smartspacer).
-- QuickSwitch support for Android Recents integration on Android 10-15 (root required).
-- Global search for apps, contacts, and web results from the home screen.
-- Customization options for icon packs, fonts, and color settings.
-
-## Download
-
-<p align="left">
-  <a href="https://play.google.com/store/apps/details?id=app.lawnchair.play">
-    <picture>
-      <!-- Avoid image being clickable with slight workaround -->
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-google-play.webp" height="60">
-      <img alt="Get it on Google Play" src="docs/assets/badge-google-play.webp" height="60">
-    </picture>
-  </a>
-  <a href="https://apt.izzysoft.de/fdroid/index/apk/app.lawnchair">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-izzyondroid.webp" height="60">
-      <img alt="Get it on IzzyOnDroid" src="docs/assets/badge-izzyondroid.webp" height="60">
-    </picture>
-  </a>
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/LawnchairLauncher/lawnchair/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-obtainium.webp" height="60">
-      <img alt="Get it on Obtainium" src="docs/assets/badge-obtainium.webp" height="60">
-    </picture>
-  </a>
-    <a href="https://github.com/LawnchairLauncher/lawnchair/releases">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/badge-github.webp" height="60">
-      <img alt="Get it on GitHub" src="docs/assets/badge-github.webp" height="60">
-    </picture>
-  </a>
+<p align="center">
+  <img src="docs/assets/vellum-hero.svg" alt="Vellum Launcher — home, with atmosphere" width="100%" />
 </p>
 
-Lawnchair on Play Store will install as a different app compared to other sources. Features may be restricted to comply with Google Play’s publishing rules.
+# Vellum Launcher
 
-You can also [verify your installation](https://docs.lawnchair.app/getting-started/install-and-setup/verify) to check if you have installed an official build.
+**Home, with atmosphere.** Vellum is a fast, open-source Android launcher that pairs the power and compatibility of Lawnchair with a calmer, more tactile visual language.
 
-### Development builds
+[![Android CI](https://github.com/soham-bhattacharya/Vellum-Launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/soham-bhattacharya/Vellum-Launcher/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-9d86ff.svg)](LICENSE.txt)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-6da5ff.svg)](#install)
 
-Interested in keeping yourself up-to-date with every Lawnchair development? Try our development builds!
+> [!IMPORTANT]
+> **Bloom Preview 1** is an enthusiast preview built from Lawnchair's Android 16 development branch. Back up an existing launcher layout before making Vellum your default home app.
 
-These builds offer the latest features and bug fixes at a cost of performance and additional issues. Make backups before installing.
+## The Vellum experience
 
-Download: [Obtainium][Obtainium link] • [GitHub][GitHub link] • [nightly.link][Nightly link]
+- **Ambient Canvas** — a wallpaper-aware field of soft light, fine orbit lines, and page-linked parallax that redraws only when the workspace moves.
+- **The Halo** — Vellum's small signature control in the top-right corner. Tap it for All Apps; hold it for settings.
+- **Bloom Reveal** — a cinematic, one-time welcome that introduces the launcher without adding another setup maze.
+- **Folded identity** — a new adaptive and monochrome icon inspired by a sheet folding into a `V`.
+- **Pixel-fast foundation** — Launcher3 recents, global search, icon packs, gestures, folders, Smartspace, backup/restore, and Lawnchair's deep customization remain available.
+- **Motion with manners** — Vellum observes Android's system animation setting, stops its reveal animation when dismissed, and hides all ambient work outside the normal home state.
 
-## Sponsors
+The ambient layer has no network access, telemetry, service, or background timer. Vellum inherits Lawnchair's optional online search and update-related components; network search runs only through features the user chooses to use.
 
-<p align="left">
-  <a href="https://coderabbit.link/lawnchair">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sponsor-coderabbit-dark.svg" width="300">
-      <img alt="CodeRabbit" src="docs/assets/sponsor-coderabbit-light.svg" width="300">
-    </picture>
-  </a>
-</p>
+## Install
 
-[CodeRabbit](https://coderabbit.link/lawnchair) is an AI-powered code review platform that integrates directly into pull-request workflows and IDEs, examining code changes in context and suggesting improvements.
+1. Download the newest APK from [Releases](https://github.com/soham-bhattacharya/Vellum-Launcher/releases).
+2. Allow installation from your browser or file manager when Android asks.
+3. Open **Vellum**, tap **Enter Vellum**, then choose it as the default Home app.
 
-## Support Lawnchair
+The GitHub build uses the independent package `app.vellum.launcher`, so it can coexist with official Lawnchair. Preview/debug builds use `app.vellum.launcher.debug`.
 
-If you love what we do, consider [supporting us on Open Collective](https://opencollective.com/lawnchair)! Your contributions help keep Lawnchair independent and enable us to develop faster.
+## Build it yourself
 
-A huge thank you to our Core Backers ($5+):
-*(These backers directly fund our Project Velocity Fund)*
+Prerequisites: JDK 21, the Android SDK, and Git with submodule support.
 
-[![Core Backers](https://opencollective.com/lawnchair/tiers/backer.svg?avatarHeight=64&width=890&button=false)](https://opencollective.com/lawnchair)
+```bash
+git clone --recurse-submodules https://github.com/soham-bhattacharya/Vellum-Launcher.git
+cd Vellum-Launcher
+./gradlew assembleLawnWithQuickstepGithubDebug
+```
 
-[Become a supporter](https://opencollective.com/lawnchair) to help us cover our operational costs, or become a Core Backer to be featured here!
+The APK is written to `build/outputs/apk/lawnWithQuickstepGithub/debug/`.
 
-## Contribute
+For an optimized build:
 
-Visit the [Lawnchair contributing guidelines](CONTRIBUTING.md) for information and tips on contributing to Lawnchair.
+```bash
+./gradlew assembleLawnWithQuickstepGithubRelease
+```
 
-## Quick links
+Without `keystore.properties`, release builds fall back to the local Android debug key and are suitable for personal testing—not store distribution.
 
-- [Website](https://lawnchair.app)
-- [Documentation](https://docs.lawnchair.app/)
-- [News on Telegram](https://t.me/lawnchairci)
-- [Discord](https://discord.com/invite/3x8qNWxgGZ)
-- [X (formerly Twitter)](https://x.com/lawnchairapp)
-- [_XDA_ thread](https://xdaforums.com/t/lawnchair-customizable-pixel-launcher.3627137/)
+## Design and performance notes
 
-<!-- Download links -->
-[Nightly link]: https://nightly.link/LawnchairLauncher/lawnchair/workflows/ci/15-dev
-[Obtainium link]: https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22app.lawnchair.nightly%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Flawnchairlauncher%2Flawnchair%22%2C%22author%22%3A%22Lawnchair%20Launcher%22%2C%22name%22%3A%22Lawnchair%20(Debug)%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Afalse%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22Lawnchair%20Nightly%5C%22%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22dontSortReleasesList%5C%22%3Afalse%2C%5C%22useLatestAssetDateAsReleaseDate%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22matchGroupToUse%5C%22%3A%5C%22%5C%22%2C%5C%22versionDetection%5C%22%3Afalse%2C%5C%22releaseDateAsVersion%5C%22%3Atrue%2C%5C%22useVersionCodeAsOSVersion%5C%22%3Afalse%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22shizukuPretendToBeGooglePlay%5C%22%3Afalse%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22about%5C%22%3A%5C%22Lawnchair%20is%20a%20free%2C%20open-source%20home%20app%20for%20Android.%20(NOTE%3A%20This%20is%20the%20debug%20version%20of%20Lawnchair%2C%20for%20the%20beta%2Fstable%20versions%20see%20%5C%5C%5C%22Lawnchair%5C%5C%5C%22)%5C%22%7D%22%7D
-[GitHub link]: https://github.com/LawnchairLauncher/lawnchair/releases/tag/nightly
+Vellum's home effects are native Android `Canvas` drawing rather than a WebView, bitmap animation, or live wallpaper. Shaders are built on size/theme changes and translated by the GPU during page motion. The page listener invalidates a single non-interactive view, and launcher-state callbacks fade and disable it as soon as All Apps, Overview, or an app becomes active.
+
+The one-time welcome animation honors `ValueAnimator.areAnimatorsEnabled()`, cancels on detach, and permanently removes itself from the view hierarchy after dismissal.
+
+## Lineage
+
+Vellum is a fork of [Lawnchair 16](https://github.com/LawnchairLauncher/lawnchair), which is based on Android's Launcher3. The first Vellum release began at upstream commit [`d1fa12d`](https://github.com/LawnchairLauncher/lawnchair/commit/d1fa12df1951b92c1c0e9c06b4a0815d683b5260).
+
+The Lawnchair project and its contributors created and maintain the substantial launcher foundation beneath Vellum. Please support the [Lawnchair project](https://opencollective.com/lawnchair) and review its [documentation](https://docs.lawnchair.app/) for advanced launcher features.
+
+## License
+
+Vellum, Lawnchair, and Launcher3 code in this repository are distributed under the [Apache License 2.0](LICENSE.txt), with copyright notices retained in their respective source files.

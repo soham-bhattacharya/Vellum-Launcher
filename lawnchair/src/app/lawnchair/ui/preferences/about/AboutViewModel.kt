@@ -95,6 +95,13 @@ class AboutViewModel(
     companion object {
         private val team = listOf(
             TeamMember(
+                name = "Soham Bhattacharya",
+                role = Role.Development,
+                photoUrl = "https://avatars.githubusercontent.com/soham-bhattacharya",
+                socialUrl = "https://github.com/soham-bhattacharya",
+                githubUsername = "soham-bhattacharya",
+            ),
+            TeamMember(
                 name = "Amogh Lele",
                 role = Role.Development,
                 photoUrl = "https://avatars.githubusercontent.com/u/31761843",
@@ -188,17 +195,17 @@ class AboutViewModel(
             Link(
                 iconResId = R.drawable.ic_new_releases,
                 labelResId = R.string.news,
-                url = "https://t.me/lawnchairci",
+                url = "https://github.com/soham-bhattacharya/Vellum-Launcher/releases",
             ),
             Link(
                 iconResId = R.drawable.ic_help,
                 labelResId = R.string.support,
-                url = "https://lawnchair.app/support",
+                url = "https://github.com/soham-bhattacharya/Vellum-Launcher/issues",
             ),
             Link(
                 iconResId = R.drawable.ic_github,
                 labelResId = R.string.github,
-                url = "https://github.com/LawnchairLauncher/lawnchair",
+                url = "https://github.com/soham-bhattacharya/Vellum-Launcher",
             ),
             Link(
                 iconResId = R.drawable.ic_translate,
