@@ -117,7 +117,11 @@ class DeviceProfileOverrides @Inject constructor(
             deviceType: Int,
             previewOverrides: PreviewOverrides,
         ) : this(
-            numAllAppsColumns = prefs2.drawerColumns.firstCached(gridOption = defaultGrid),
+            numAllAppsColumns = if (prefs2.vellumColumnDrawer.firstCached()) {
+                1
+            } else {
+                prefs2.drawerColumns.firstCached(gridOption = defaultGrid)
+            },
             numFolderRows = prefs.folderRows.get(defaultGrid),
             numFolderColumns = prefs2.folderColumns.firstCached(gridOption = defaultGrid),
 

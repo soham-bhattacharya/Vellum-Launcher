@@ -17,7 +17,9 @@
 package app.lawnchair.vellum.preset
 
 import android.content.Context
+import app.lawnchair.preferences.PreferenceManager as LawnchairPreferenceManager
 import app.lawnchair.preferences2.PreferenceManager2
+import app.lawnchair.vellum.iconpack.CuratedIconPack
 import app.lawnchair.vellum.surface.VellumSurface
 import app.lawnchair.vellum.surface.VellumSurfaceSet
 import com.android.launcher3.util.ComponentKey
@@ -72,9 +74,24 @@ object LookApplier {
             // nothing the user can see, and would read as the button being broken.
             preferences.vellumAmbientEnabled.set(value = true)
             preferences.vellumSurfacesEnabled.set(value = true)
+            preferences.vellumColumnDrawer.set(value = look.columnDrawer)
+            applyIconPackIfPresent(context, look)
         }
 
         return resolved.values.sumOf { it.size }
+    }
+
+    /**
+     * Switches to the look's icon pack, but only when the user already has it.
+     *
+     * A look cannot install anything, and quietly pointing the launcher at a package that is not
+     * there would leave every icon as its system default with no explanation. Leaving the current
+     * pack alone is the honest outcome; the gallery says which pack the look was drawn against.
+     */
+    private fun applyIconPackIfPresent(context: Context, look: VellumLook) {
+        val pack = CuratedIconPack.byId(look.iconPackId) ?: return
+        val installed = pack.installedPackage(context.packageManager) ?: return
+        LawnchairPreferenceManager.getInstance(context).iconPackPackage.set(newValue = installed)
     }
 
     /**

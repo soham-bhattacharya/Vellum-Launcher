@@ -128,6 +128,7 @@
     <bool name="config_default_vellum_halo_enabled">false</bool>
     <item name="config_default_vellum_ambient_intensity" format="float" type="dimen">0.7</item>
     <bool name="config_default_vellum_surfaces_enabled">true</bool>
+    <bool name="config_default_vellum_column_drawer">false</bool>
     <bool name="config_default_dock_search_bar_force_website">false</bool>
     <bool name="config_default_rounded_widgets">true</bool>
     <bool name="config_default_allow_widget_overlap">false</bool>

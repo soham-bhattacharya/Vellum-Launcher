@@ -88,6 +88,28 @@
     <string name="vellum_backdrop_veil">Veil</string>
     <string name="vellum_backdrop_veil_description">Almost nothing. One soft source in the corner.</string>
 
+    <!-- Vellum curated icon packs -->
+    <string name="vellum_packs_label">Icon packs</string>
+    <string name="vellum_packs_description">A short list of packs worth having</string>
+    <string name="vellum_packs_heading">Recommended</string>
+    <string name="vellum_packs_explainer">Vellum does not include these packs. Ones you already have can be applied here; the rest open in the store.</string>
+    <string name="vellum_packs_all_installed">All installed packs</string>
+    <string name="vellum_packs_all_installed_subtitle">Everything on this device, with previews</string>
+    <string name="vellum_pack_apply">Apply</string>
+    <string name="vellum_pack_get">Get</string>
+    <string name="vellum_pack_in_use">In use</string>
+    <string name="vellum_pack_open_source">Open source</string>
+    <string name="vellum_pack_applied">%1$s applied</string>
+    <string name="vellum_pack_no_store">No app on this device can open that link.</string>
+    <string name="vellum_pack_lawnicons">Lawnicons</string>
+    <string name="vellum_pack_lawnicons_tagline">Monochrome outlined brand icons, from the project Vellum is built on</string>
+    <string name="vellum_pack_arcticons">Arcticons</string>
+    <string name="vellum_pack_arcticons_tagline">Thousands of hand-drawn line icons, with a Material You variant</string>
+    <string name="vellum_pack_delta">Delta</string>
+    <string name="vellum_pack_delta_tagline">Flat and colourful, with unusually broad app coverage</string>
+    <string name="vellum_pack_zwart">Zwart</string>
+    <string name="vellum_pack_zwart_tagline">Black monochrome, for a home screen that disappears into the wallpaper</string>
+
     <!-- Vellum looks -->
     <string name="vellum_looks_label">Looks</string>
     <string name="vellum_looks_description">Complete designs you can try in one tap</string>
@@ -105,6 +127,10 @@
     <string name="vellum_look_paper_tagline">Muted pigment on textured stock</string>
     <string name="vellum_look_signal">Signal</string>
     <string name="vellum_look_signal_tagline">Loud on purpose, in overlapping colour</string>
+    <string name="vellum_look_index">Index</string>
+    <string name="vellum_look_index_tagline">A spare home screen and a drawer you read top to bottom</string>
+    <string name="vellum_column_drawer_label">Column drawer</string>
+    <string name="vellum_column_drawer_description">Show apps as one alphabetical column with names beside icons, and use the A–Z rail to jump. Preview: row spacing is not tuned yet.</string>
     <string name="vellum_look_apply">Apply this look</string>
     <string name="vellum_look_apply_with_apps">Apply and suggest apps</string>
     <string name="vellum_look_apply_apps_confirm">This replaces the colours, background designs, and times of every surface, and fills each one with apps picked for that time of day. Anything you pinned to a surface yourself is replaced. Your home screen icons never move.</string>

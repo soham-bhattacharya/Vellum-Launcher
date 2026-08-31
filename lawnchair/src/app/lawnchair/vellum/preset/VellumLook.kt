@@ -51,6 +51,21 @@ data class VellumLook(
     val surfaces: List<LookSurface>,
     /** Which daypart the gallery card renders. */
     private val showcaseIndex: Int,
+    /**
+     * Whether this look wants the app drawer as one alphabetical column.
+     *
+     * A look is a whole setup, not only a palette. Restricting looks to colour would mean the
+     * gallery could never express the difference between a dense, colourful home screen and a
+     * spare one you read like a list, which is the more interesting axis.
+     */
+    val columnDrawer: Boolean = false,
+    /**
+     * An icon pack this look was designed against.
+     *
+     * Only applied when the user already has it: a look cannot install anything, and silently
+     * doing nothing would be less honest than saying the pack is worth getting.
+     */
+    val iconPackId: String? = null,
 ) {
     val showcase: LookSurface get() = surfaces[showcaseIndex]
 
@@ -109,7 +124,7 @@ data class VellumLook(
          * where every entry is the same design in a different hue teaches the user that the feature
          * is cosmetic.
          */
-        fun all(): List<VellumLook> = listOf(bloom(), aurora(), dunes(), nocturne(), paper(), signal())
+        fun all(): List<VellumLook> = listOf(bloom(), aurora(), dunes(), nocturne(), paper(), signal(), index())
 
         val Default get() = bloom()
 
@@ -182,6 +197,28 @@ data class VellumLook(
                 LookSurface(VellumSurface.ID_DAY, hm(11), hm(17), 0xFF8A9A5B.toInt(), 0xFFB5C48E.toInt(), BackdropStyle.GRAIN, .42f, FOCUS_DAY),
                 LookSurface(VellumSurface.ID_EVENING, hm(17), hm(22), 0xFFA15C4A.toInt(), 0xFFC98B6B.toInt(), BackdropStyle.GRAIN, .55f, CALM_EVENING),
                 LookSurface(VellumSurface.ID_NIGHT, hm(22), hm(5), 0xFF4F5D5A.toInt(), 0xFF7C8C88.toInt(), BackdropStyle.GRAIN, .60f, SPARSE_NIGHT),
+            ),
+        )
+
+        /**
+         * The list setup: a spare home screen and a drawer read top to bottom.
+         *
+         * This exists to prove the gallery can change the shape of the launcher and not only its
+         * colours, and to give the one-handed, alphabet-rail way of working a first-class entry
+         * rather than burying it in a switch nobody finds.
+         */
+        private fun index() = VellumLook(
+            id = "index",
+            nameRes = R.string.vellum_look_index,
+            taglineRes = R.string.vellum_look_index_tagline,
+            showcaseIndex = 3,
+            columnDrawer = true,
+            iconPackId = "lawnicons",
+            surfaces = listOf(
+                LookSurface(VellumSurface.ID_MORNING, hm(5), hm(11), 0xFF6E7A8A.toInt(), 0xFFA3AEBD.toInt(), BackdropStyle.VEIL, .40f, SPARSE_MORNING),
+                LookSurface(VellumSurface.ID_DAY, hm(11), hm(17), 0xFF7A8694.toInt(), 0xFFAEB8C4.toInt(), BackdropStyle.VEIL, .30f, SPARSE_DAY),
+                LookSurface(VellumSurface.ID_EVENING, hm(17), hm(22), 0xFF4A5568.toInt(), 0xFF7B8AA0.toInt(), BackdropStyle.VEIL, .55f, SPARSE_EVENING),
+                LookSurface(VellumSurface.ID_NIGHT, hm(22), hm(5), 0xFF232A38.toInt(), 0xFF46536B.toInt(), BackdropStyle.NOCTURNE, .80f, SPARSE_NIGHT),
             ),
         )
 

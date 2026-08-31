@@ -325,6 +325,18 @@ class PreferenceManager2 @Inject constructor(
     )
 
     /**
+     * Draws the app drawer as one alphabetical column instead of a grid.
+     *
+     * Off by default: it is a wholesale change to how the drawer reads, not a refinement, and it
+     * suits one-handed use far more than it suits a tablet.
+     */
+    val vellumColumnDrawer = preference(
+        key = booleanPreferencesKey(name = "vellum_column_drawer"),
+        defaultValue = context.resources.getBoolean(R.bool.config_default_vellum_column_drawer),
+        onSet = { reloadHelper.reloadGrid() },
+    )
+
+    /**
      * The look last applied from the gallery, used only to mark it as in use.
      *
      * This is not the source of truth for anything the home screen draws: editing a surface by hand

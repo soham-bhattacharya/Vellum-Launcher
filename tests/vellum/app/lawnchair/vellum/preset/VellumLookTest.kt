@@ -16,6 +16,7 @@
 
 package app.lawnchair.vellum.preset
 
+import app.lawnchair.vellum.iconpack.CuratedIconPack
 import app.lawnchair.vellum.surface.VellumSurface
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -166,6 +167,33 @@ class VellumLookTest {
             assertThat(surface.accentSecondary).isEqualTo(lookSurface.secondary)
             assertThat(surface.ambientIntensity).isEqualTo(lookSurface.ambientIntensity)
             assertThat(surface.backdropId).isEqualTo(lookSurface.backdrop.id)
+        }
+    }
+
+    @Test
+    fun anyIconPackALookNamesIsOneVellumActuallyRecommends() {
+        // A look pointing at a pack that is not in the curated list would silently apply nothing,
+        // because LookApplier resolves the id through CuratedIconPack before touching preferences.
+        looks.mapNotNull { it.iconPackId }.forEach { id ->
+            assertThat(CuratedIconPack.byId(id)).isNotNull()
+        }
+    }
+
+    @Test
+    fun exactlyOneLookChangesTheShapeOfTheDrawer() {
+        // Column mode is a wholesale change to how the launcher reads. More than one look opting
+        // into it would make the gallery feel like it had two defaults rather than one alternative.
+        assertThat(looks.filter { it.columnDrawer }.map { it.id }).containsExactly("index")
+    }
+
+    @Test
+    fun theListLookIsTheSpareOne() {
+        // Guards the intent of the Index look: if it ever picks up a loud backdrop or a long app
+        // list, it stops being the thing somebody reaches for when they want less.
+        val index = VellumLook.byId("index")!!
+        assertThat(index.columnDrawer).isTrue()
+        index.surfaces.forEach { surface ->
+            assertThat(surface.roles.size).isAtMost(4)
         }
     }
 }

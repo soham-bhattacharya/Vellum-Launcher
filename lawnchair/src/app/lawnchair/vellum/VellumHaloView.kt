@@ -63,6 +63,15 @@ class VellumHaloView @JvmOverloads constructor(
 
     private var accent = resolveAccentColor()
 
+    /**
+     * Accent contributed by the active context surface, or null to follow the theme.
+     *
+     * The Halo is the way into the surface panel, so it reading as a generic theme-coloured button
+     * while the home screen behind it is unmistakably Evening was the one place the feature did not
+     * hang together.
+     */
+    private var surfaceAccent: Int? = null
+
     /** Home-state visibility, 0..1, driven by [VellumStateHandler]. */
     private var stateProgress = 1f
 
@@ -111,6 +120,15 @@ class VellumHaloView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         ThemeProvider.INSTANCE.get(context).removeListener(themeListener)
         super.onDetachedFromWindow()
+    }
+
+    /** Adopts the active surface's colour. Passing null returns to the theme accent. */
+    fun setSurfaceAccent(value: Int?) {
+        if (surfaceAccent == value) return
+        surfaceAccent = value
+        accent = resolveAccentColor()
+        rebuildShader()
+        invalidate()
     }
 
     fun setOnHaloClick(action: (() -> Boolean)?) {
@@ -218,7 +236,9 @@ class VellumHaloView @JvmOverloads constructor(
             .start()
     }
 
+    /** The surface colour when one is active, otherwise the live Material You accent. */
     private fun resolveAccentColor(): Int {
+        surfaceAccent?.let { return it }
         val typedValue = android.util.TypedValue()
         return if (context.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)) {
             typedValue.data

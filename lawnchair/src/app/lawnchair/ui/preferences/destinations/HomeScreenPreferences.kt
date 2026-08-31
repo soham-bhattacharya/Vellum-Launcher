@@ -46,6 +46,7 @@ import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.HomeScreenGrid
+import app.lawnchair.ui.preferences.navigation.VellumIconPacks
 import app.lawnchair.ui.preferences.navigation.VellumLooks
 import app.lawnchair.ui.preferences.navigation.VellumSurfaces
 import app.lawnchair.util.collectAsStateBlocking
@@ -140,6 +141,11 @@ fun HomeScreenPreferences(
                 destination = VellumLooks,
                 subtitle = stringResource(id = R.string.vellum_looks_description),
             )
+            NavigationActionPreference(
+                label = stringResource(id = R.string.vellum_packs_label),
+                destination = VellumIconPacks,
+                subtitle = stringResource(id = R.string.vellum_packs_description),
+            )
             val ambientEnabledAdapter = prefs2.vellumAmbientEnabled.getAdapter()
             SwitchPreference(
                 adapter = ambientEnabledAdapter,
@@ -159,6 +165,11 @@ fun HomeScreenPreferences(
                 adapter = prefs2.vellumHaloEnabled.getAdapter(),
                 label = stringResource(id = R.string.vellum_halo_label),
                 description = stringResource(id = R.string.vellum_halo_preference_description),
+            )
+            SwitchPreference(
+                adapter = prefs2.vellumColumnDrawer.getAdapter(),
+                label = stringResource(id = R.string.vellum_column_drawer_label),
+                description = stringResource(id = R.string.vellum_column_drawer_description),
             )
             val surfacesEnabledAdapter = prefs2.vellumSurfacesEnabled.getAdapter()
             SwitchPreference(
