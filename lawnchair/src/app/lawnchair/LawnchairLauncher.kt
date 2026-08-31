@@ -606,10 +606,11 @@ class LawnchairLauncher : QuickstepLauncher() {
         val engine = SurfaceEngine(this, lifecycleScope)
         surfaceEngine = engine
         engine.start()
-        engine.activeSurface
-            .onEach { surface ->
-                ambient.setSurface(surface)
-                halo.setSurfaceAccent(surface?.accent)
+        engine.moment
+            .onEach { moment ->
+                val atmosphere = moment?.atmosphere()
+                ambient.setAtmosphere(atmosphere)
+                halo.setSurfaceAccent(atmosphere?.palette?.accent)
             }
             .launchIn(lifecycleScope)
         halo.setOnHaloClick { SurfacePanel.show(this, engine) != null }

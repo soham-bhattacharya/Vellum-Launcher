@@ -33,7 +33,7 @@ import app.lawnchair.vellum.backdrop.Backdrop
 import app.lawnchair.vellum.backdrop.BackdropGeometry
 import app.lawnchair.vellum.backdrop.BackdropPalette
 import app.lawnchair.vellum.backdrop.BackdropStyle
-import app.lawnchair.vellum.surface.VellumSurface
+import app.lawnchair.vellum.backdrop.VellumAtmosphere
 import com.android.launcher3.Workspace
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -74,8 +74,8 @@ class VellumAmbientView @JvmOverloads constructor(
     /** Ambient strength contributed by the active context surface, 0..1. */
     private var surfaceIntensity = 1f
 
-    /** The surface currently being painted, or null when no context surface is active. */
-    private var activeSurface: VellumSurface? = null
+    /** The light currently being painted, or null when no context surface is active. */
+    private var atmosphere: VellumAtmosphere? = null
 
     /** Drives the dip-and-return used when the active surface changes. */
     private var crossfade = 1f
@@ -212,21 +212,26 @@ class VellumAmbientView @JvmOverloads constructor(
     }
 
     /**
-     * Adopts the atmosphere of a context surface. Passing null returns to the theme accent and the
-     * default design.
+     * Adopts a resolved atmosphere. Passing null returns to the theme accent and the default design.
      *
-     * The change is a dip and return rather than a per-frame colour interpolation: the whole
-     * appearance is swapped once, at the bottom of the dip, so a surface change costs exactly one
-     * repaint instead of one per frame of the transition. That matters more here than it did when
-     * only a colour changed, because a backdrop switch also rebuilds every shader and path.
+     * A change is a dip and return rather than a per-frame colour interpolation: the whole
+     * appearance is swapped once, at the bottom of the dip, so it costs exactly one repaint instead
+     * of one per frame of the transition. That matters more than it did when only a colour changed,
+     * because a backdrop switch also rebuilds every shader and path.
+     *
+     * The dip is reserved for changes worth noticing. The light drifts continuously through a
+     * surface, so this is called with a very slightly different colour every time the launcher
+     * resumes; playing a two-thirds-of-a-second dip for a change nobody could see would turn the
+     * drift into a flicker. Small steps are committed silently.
      */
-    fun setSurface(surface: VellumSurface?, animate: Boolean = true) {
-        val newIntensity = surface?.ambientIntensity?.coerceIn(0f, 1f) ?: 1f
-        if (sameAppearance(activeSurface, surface) && surfaceIntensity == newIntensity) return
+    fun setAtmosphere(next: VellumAtmosphere?, animate: Boolean = true) {
+        val newIntensity = next?.intensity?.coerceIn(0f, 1f) ?: 1f
+        val current = atmosphere
+        if (current == next && surfaceIntensity == newIntensity) return
 
         crossfadeAnimator?.cancel()
-        if (!animate || !ValueAnimator.areAnimatorsEnabled() || visibility != VISIBLE) {
-            commitSurface(surface, newIntensity)
+        if (!animate || !worthADip(current, next) || !ValueAnimator.areAnimatorsEnabled() || visibility != VISIBLE) {
+            commitAtmosphere(next, newIntensity)
             crossfade = 1f
             applyAlpha()
             return
@@ -243,7 +248,7 @@ class VellumAmbientView @JvmOverloads constructor(
                 } else {
                     if (!committed) {
                         committed = true
-                        commitSurface(surface, newIntensity)
+                        commitAtmosphere(next, newIntensity)
                     }
                     crossfade = (t - SURFACE_DIP_POINT) / (1f - SURFACE_DIP_POINT)
                 }
@@ -251,7 +256,7 @@ class VellumAmbientView @JvmOverloads constructor(
             }
             addListener(
                 onEnd = {
-                    if (!committed) commitSurface(surface, newIntensity)
+                    if (!committed) commitAtmosphere(next, newIntensity)
                     crossfade = 1f
                     applyAlpha()
                     crossfadeAnimator = null
@@ -261,27 +266,34 @@ class VellumAmbientView @JvmOverloads constructor(
         }
     }
 
-    /** Whether two surfaces would paint identically, ignoring anything the canvas does not use. */
-    private fun sameAppearance(a: VellumSurface?, b: VellumSurface?): Boolean = when {
-        a == null || b == null -> a == null && b == null
-
-        else ->
-            a.accent == b.accent &&
-                a.accentSecondary == b.accentSecondary &&
-                a.backdropId == b.backdropId
+    /**
+     * Whether a change is large enough to be worth announcing with a dip.
+     *
+     * A different background design always is: the composition changes wholesale. A colour change
+     * only is when it is big enough to register, which is what separates arriving at a new surface
+     * from the minute-by-minute lean toward the next one.
+     */
+    private fun worthADip(from: VellumAtmosphere?, to: VellumAtmosphere?): Boolean {
+        if (from == null || to == null) return true
+        if (from.style != to.style) return true
+        return channelDistance(from.palette.accent, to.palette.accent) > DIP_THRESHOLD
     }
 
-    private fun commitSurface(surface: VellumSurface?, intensity: Float) {
-        activeSurface = surface
+    private fun channelDistance(a: Int, b: Int): Int = abs(Color.red(a) - Color.red(b)) +
+        abs(Color.green(a) - Color.green(b)) +
+        abs(Color.blue(a) - Color.blue(b))
+
+    private fun commitAtmosphere(next: VellumAtmosphere?, intensity: Float) {
+        atmosphere = next
         surfaceIntensity = intensity
         applyAppearance()
     }
 
     /** Pushes the current style and palette into both layers, rebuilding their shaders once. */
     private fun applyAppearance() {
-        val surface = activeSurface
-        val style = surface?.backdrop ?: BackdropStyle.Default
-        val palette = surface?.palette() ?: BackdropPalette.of(themeAccent(), null)
+        val current = atmosphere
+        val style = current?.style ?: BackdropStyle.Default
+        val palette = current?.palette ?: BackdropPalette.of(themeAccent(), null)
         washLayer.setAppearance(style, palette)
         fieldLayer.setAppearance(style, palette)
         applyParallax()
@@ -415,6 +427,12 @@ class VellumAmbientView @JvmOverloads constructor(
 
         /** Point in that animation at which the appearance is swapped. */
         const val SURFACE_DIP_POINT = .34f
+
+        /**
+         * Summed per-channel difference, out of 765, above which a colour change earns a dip.
+         * Below it the change is committed silently, which is what makes the drift invisible.
+         */
+        const val DIP_THRESHOLD = 48
 
         val FALLBACK_ACCENT = Color.rgb(137, 108, 255)
     }

@@ -37,10 +37,13 @@ import kotlinx.coroutines.flow.onEach
 /**
  * Decides which [VellumSurface] is currently active, and keeps that decision current.
  *
- * There is no polling and no periodic wakeup. The engine computes exactly how long the active
- * surface has left and schedules a single callback for that moment, then reschedules. It also
- * listens for the clock being changed out from under it, and re-evaluates whenever the launcher
- * comes back to the foreground, which covers the case where the device slept through a boundary.
+ * There is no polling and no periodic wakeup. The engine computes exactly when the light next has
+ * to change — the moment the active surface begins leaning toward its successor, or the moment it
+ * ends — and schedules a single callback for that, then reschedules. A surface therefore costs two
+ * wake-ups for its entire window rather than one per minute. It also listens for the clock being
+ * changed out from under it, and re-evaluates whenever the launcher comes back to the foreground,
+ * which covers both a device that slept through a boundary and the drift that accumulated while
+ * nobody was looking.
  */
 class SurfaceEngine(
     private val context: Context,
@@ -50,8 +53,13 @@ class SurfaceEngine(
     private val preferenceManager2 = PreferenceManager2.getInstance(context)
     private val handler = Handler(Looper.getMainLooper())
 
-    private val _activeSurface = MutableStateFlow<VellumSurface?>(null)
-    val activeSurface: StateFlow<VellumSurface?> = _activeSurface.asStateFlow()
+    private val _moment = MutableStateFlow<SurfaceMoment?>(null)
+
+    /** The active surface together with how far its light has drifted toward the next one. */
+    val moment: StateFlow<SurfaceMoment?> = _moment.asStateFlow()
+
+    /** The surface in effect now, for callers that do not care about the drift. */
+    val activeSurface: VellumSurface? get() = _moment.value?.surface
 
     private var surfaceSet = VellumSurfaceSet()
     private var featureEnabled = false
@@ -62,11 +70,21 @@ class SurfaceEngine(
      */
     private var manualOverrideId: String? = null
 
-    private val boundaryRunnable = Runnable {
-        // A boundary passed, so any manual override has served its purpose.
-        manualOverrideId = null
+    /**
+     * Fires either when the active surface starts leaning toward the next one, or when it ends.
+     *
+     * The override is only cleared in the second case: a surface beginning to lean is not the day
+     * moving on, and cancelling somebody's pinned surface halfway through it would be baffling.
+     */
+    private val nextChangeRunnable = Runnable {
+        if (scheduledSurface()?.id != surfaceIdAtLastSchedule) {
+            manualOverrideId = null
+        }
         reevaluate()
     }
+
+    /** Which surface was scheduled when the pending callback was set, to tell the two cases apart. */
+    private var surfaceIdAtLastSchedule: String? = null
 
     private val clockChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) = reevaluate()
@@ -100,9 +118,10 @@ class SurfaceEngine(
     fun stop() {
         if (!started) return
         started = false
-        handler.removeCallbacks(boundaryRunnable)
+        handler.removeCallbacks(nextChangeRunnable)
         runCatching { context.unregisterReceiver(clockChangeReceiver) }
         manualOverrideId = null
+        surfaceIdAtLastSchedule = null
     }
 
     /** Called when the launcher resumes, to catch boundaries crossed while the device slept. */
@@ -128,7 +147,7 @@ class SurfaceEngine(
     fun cycleToNextSurface() {
         val candidates = surfaceSet.enabledSurfaces()
         if (candidates.size < 2) return
-        val currentIndex = candidates.indexOfFirst { it.id == _activeSurface.value?.id }
+        val currentIndex = candidates.indexOfFirst { it.id == activeSurface?.id }
         val next = candidates[(currentIndex + 1).mod(candidates.size)]
         setManualOverride(next.id)
     }
@@ -138,24 +157,33 @@ class SurfaceEngine(
     private fun scheduledSurface(): VellumSurface? = surfaceSet.surfaceAt(minuteOfDay())
 
     private fun reevaluate() {
-        handler.removeCallbacks(boundaryRunnable)
+        handler.removeCallbacks(nextChangeRunnable)
         if (!featureEnabled) {
-            _activeSurface.value = null
+            _moment.value = null
+            surfaceIdAtLastSchedule = null
             return
         }
 
+        val now = minuteOfDay()
         val scheduled = scheduledSurface()
-        val resolved = surfaceSet.byId(manualOverrideId)?.takeIf { it.enabled } ?: scheduled
-        _activeSurface.value = resolved
+        val pinned = surfaceSet.byId(manualOverrideId)?.takeIf { it.enabled }
+        val resolved = pinned ?: scheduled
+        _moment.value = resolved?.let {
+            SurfaceMoment.at(surfaceSet, now, it, pinned = pinned != null)
+        }
 
-        // Schedule the next wake-up for the moment the *scheduled* surface ends, not the overridden
-        // one, so an override expires exactly when the day would have moved on anyway.
-        val boundary = scheduled ?: return
-        val minutesLeft = boundary.minutesUntilEnd(minuteOfDay())
+        // Schedule against the *scheduled* surface, not the overridden one, so an override expires
+        // exactly when the day would have moved on anyway.
+        val boundary = scheduled ?: run {
+            surfaceIdAtLastSchedule = null
+            return
+        }
+        surfaceIdAtLastSchedule = boundary.id
+        val minutesLeft = SurfaceMoment.minutesUntilNextChange(boundary, now)
         // Land just after the turn of the minute so LocalTime has actually rolled over.
         val delayMillis = minutesLeft * 60_000L - LocalTime.now().second * 1000L + 1_000L
         handler.postAtTime(
-            boundaryRunnable,
+            nextChangeRunnable,
             SystemClock.uptimeMillis() + delayMillis.coerceAtLeast(1_000L),
         )
     }

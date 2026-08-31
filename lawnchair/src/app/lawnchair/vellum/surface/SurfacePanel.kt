@@ -138,7 +138,8 @@ class SurfacePanel @JvmOverloads constructor(
         boundEngine = engine
         collectJob?.cancel()
         collectJob = launcher.lifecycleScope.launch {
-            engine.activeSurface.collect { surface ->
+            engine.moment.collect { moment ->
+                val surface = moment?.surface
                 if (surface == null) close(true) else bind(engine, surface)
             }
         }
@@ -308,7 +309,7 @@ class SurfacePanel @JvmOverloads constructor(
 
         /** Shows the panel for the currently active surface, if surfaces are on. */
         fun show(launcher: LawnchairLauncher, engine: SurfaceEngine): SurfacePanel? {
-            val surface = engine.activeSurface.value ?: return null
+            val surface = engine.activeSurface ?: return null
             getOpenView<SurfacePanel>(launcher, TYPE_VELLUM_SURFACE_PANEL)?.close(false)
             val panel = LayoutInflater.from(launcher)
                 .inflate(R.layout.vellum_surface_panel, launcher.dragLayer, false) as SurfacePanel

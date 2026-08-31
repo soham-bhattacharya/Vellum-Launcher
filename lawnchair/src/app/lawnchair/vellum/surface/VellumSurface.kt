@@ -79,6 +79,26 @@ data class VellumSurface(
         else -> minuteOfDay >= startMinute || minuteOfDay < endMinute
     }
 
+    /** Length of this surface's window, in minutes. Always in 1..1440. */
+    val lengthMinutes: Int
+        get() = if (startMinute == endMinute) {
+            MINUTES_PER_DAY
+        } else {
+            (endMinute - startMinute + MINUTES_PER_DAY).mod(MINUTES_PER_DAY)
+        }
+
+    /** Minutes since this surface began, at [minuteOfDay]. */
+    fun elapsedAt(minuteOfDay: Int): Int = (minuteOfDay - startMinute + MINUTES_PER_DAY).mod(MINUTES_PER_DAY)
+
+    /**
+     * How far through its own window this surface is, 0..1.
+     *
+     * This is what lets the light drift *within* a stretch of the day rather than only jumping at
+     * its edges: half past five in the morning and half past ten are both Morning, and should not
+     * look identical.
+     */
+    fun phaseAt(minuteOfDay: Int): Float = (elapsedAt(minuteOfDay).toFloat() / lengthMinutes).coerceIn(0f, 1f)
+
     /** Minutes from [minuteOfDay] until this surface ends. Always in 1..1440. */
     fun minutesUntilEnd(minuteOfDay: Int): Int {
         if (startMinute == endMinute) return MINUTES_PER_DAY
@@ -200,6 +220,16 @@ data class VellumSurfaceSet(
             },
         )
     }
+
+    /**
+     * The surface that takes over when [surface] ends, or null when nothing else follows it.
+     *
+     * Resolved by asking what is active at this surface's own end rather than by taking the next
+     * entry in the list, so it stays correct after the user has moved boundaries around and list
+     * order no longer matches the order of the day.
+     */
+    fun surfaceAfter(surface: VellumSurface): VellumSurface? = surfaceAt(surface.endMinute.mod(VellumSurface.MINUTES_PER_DAY))
+        ?.takeIf { it.id != surface.id }
 
     /** The surface whose window covers [minuteOfDay], or null when none is enabled. */
     fun surfaceAt(minuteOfDay: Int): VellumSurface? {

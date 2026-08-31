@@ -115,7 +115,7 @@ class LawnchairShortcut {
          */
         val PIN_TO_SURFACE =
             SystemShortcut.Factory { activity: LawnchairLauncher, itemInfo: ItemInfo, originalView: View ->
-                val surface = activity.surfaceEngine?.activeSurface?.value ?: return@Factory null
+                val surface = activity.surfaceEngine?.activeSurface ?: return@Factory null
                 val component = itemInfo.targetComponent ?: return@Factory null
                 if (itemInfo.itemType != ITEM_TYPE_APPLICATION) return@Factory null
                 val key = ComponentKey(component, itemInfo.user)
