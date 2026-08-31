@@ -15,12 +15,13 @@
 
 ## The Vellum experience
 
-- **Ambient Canvas** — a wallpaper-aware field of soft light, fine orbit lines, and page-linked parallax that redraws only when the workspace moves.
-- **The Halo** — Vellum's small signature control in the top-right corner. Tap it for All Apps; hold it for settings.
+- **Context Surfaces** — Vellum's headline idea. The home screen has a *surface* for each stretch of the day — Morning, Day, Evening, Night — each with its own atmosphere and its own short list of apps. Surfaces are strictly **additive**: they retint the ambient layer and fill the surface panel, and they never rearrange your grid. Your icons do not move, ever. Long-press any app to pin it to the surface that is active right now, bind a gesture (or tap the Halo) to open the panel, and tap a chip to pin a different surface until the next boundary. Every surface is editable under *Home screen → Vellum → Surfaces*: name, start and end time, colour, ambient strength, and its app list.
+- **Ambient Canvas** — a field of soft light, fine orbit lines, and page-linked parallax behind the workspace. Paging moves it without repainting it. Adjustable from 0–100%, and switchable off.
+- **The Halo** — an optional shortcut in the top-right corner: tap for All Apps, hold for settings. It is an overlay above the workspace, so it covers one home screen cell; for that reason it ships **off** and is opt-in under *Home screen → Vellum*.
 - **Bloom Reveal** — a cinematic, one-time welcome that introduces the launcher without adding another setup maze.
 - **Folded identity** — a new adaptive and monochrome icon inspired by a sheet folding into a `V`.
 - **Pixel-fast foundation** — Launcher3 recents, global search, icon packs, gestures, folders, Smartspace, backup/restore, and Lawnchair's deep customization remain available.
-- **Motion with manners** — Vellum observes Android's system animation setting, stops its reveal animation when dismissed, and hides all ambient work outside the normal home state.
+- **Motion with manners** — Vellum's decorations are driven by the launcher's own state transition, so they track All Apps and Overview exactly, including a half-finished swipe that the user reverses. They observe Android's system animation setting, and follow the live Material You accent without needing a restart.
 
 The ambient layer has no network access, telemetry, service, or background timer. Vellum inherits Lawnchair's optional online search and update-related components; network search runs only through features the user chooses to use.
 
@@ -54,13 +55,25 @@ Without `keystore.properties`, release builds fall back to the local Android deb
 
 ## Design and performance notes
 
-Vellum's home effects are native Android `Canvas` drawing rather than a WebView, bitmap animation, or live wallpaper. Shaders are built on size/theme changes and translated by the GPU during page motion. The page listener invalidates a single non-interactive view, and launcher-state callbacks fade and disable it as soon as All Apps, Overview, or an app becomes active.
+Vellum's home effects are native Android `Canvas` drawing rather than a WebView, bitmap animation, or live wallpaper.
+
+Surfaces tile the day: each one's end is the next one's start, and moving either side of a boundary moves both, so there is never a minute that no surface covers or that two surfaces claim. That arithmetic, including the midnight wrap, is covered by unit tests in `tests/multivalentTests/src/app/lawnchair/vellum/surface/`.
+
+Context surfaces do no polling. The engine computes exactly how long the active surface has left and schedules a single callback for that moment, plus receivers for the clock being changed and a re-check when the launcher resumes — so a surface that lasts six hours costs one wake-up, not one per minute. A surface change repaints the ambient layer exactly once, at the bottom of a short dip, rather than interpolating colour every frame.
+
+The home screen swipe is the most performance-sensitive gesture a launcher has, so the ambient layer is built never to repaint during one. It is split into two children: a wash that never moves, and a field carrying the halo, orbit lines and particles. Paging assigns only `translationX`/`translationY` to the field — no `invalidate()` — so the GPU composites the existing content instead of re-rasterising a full-screen gradient every frame. The field is promoted to a hardware layer for the duration of a scroll and released about 200 ms after the workspace settles, so a swipe costs a texture blit per frame while at rest the effect costs nothing and holds no layer memory. Shaders are built on size and theme changes only, never inside `onDraw`.
+
+Visibility is a `StateHandler` writing into the launcher's own transition animation, not a parallel timer, so the decorations stay in lockstep with All Apps and Overview.
+
+Both effects are user preferences. The ambient layer paints over the wallpaper and the Halo covers a home screen cell, so neither is imposed: the ambient canvas has an intensity slider and an off switch, and the Halo is off until you turn it on.
 
 The one-time welcome animation honors `ValueAnimator.areAnimatorsEnabled()`, cancels on detach, and permanently removes itself from the view hierarchy after dismissal.
 
 ## Lineage
 
 Vellum is a fork of [Lawnchair 16](https://github.com/LawnchairLauncher/lawnchair), which is based on Android's Launcher3. The first Vellum release began at upstream commit [`d1fa12d`](https://github.com/LawnchairLauncher/lawnchair/commit/d1fa12df1951b92c1c0e9c06b4a0815d683b5260).
+
+Strings that carry the product name were rebranded in the base `values/strings.xml`. Their existing Lawnchair-era translations were removed rather than left in place, so those specific strings currently fall back to English in other locales until Vellum has its own translation pipeline. Everything else remains fully translated.
 
 The Lawnchair project and its contributors created and maintain the substantial launcher foundation beneath Vellum. Please support the [Lawnchair project](https://opencollective.com/lawnchair) and review its [documentation](https://docs.lawnchair.app/) for advanced launcher features.
 

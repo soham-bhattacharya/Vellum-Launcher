@@ -1,6 +1,17 @@
 /*
  * Copyright 2026 Vellum Launcher contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package app.lawnchair.vellum
@@ -20,10 +31,17 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import androidx.core.graphics.ColorUtils
 import app.lawnchair.launcherNullable
+import app.lawnchair.theme.ThemeProvider
 import app.lawnchair.ui.preferences.PreferenceActivity
 import com.android.launcher3.LauncherState
 
-/** A tiny, tactile shortcut into All Apps and the visual anchor of the Vellum home screen. */
+/**
+ * Vellum's optional shortcut into All Apps.
+ *
+ * This is an overlay above the workspace, so it consumes touches over the home screen cell it sits
+ * on. That makes it opt-in (see `vellumHaloEnabled`) and it is fully removed from the hierarchy's
+ * touch handling — not merely faded — whenever it is disabled or the launcher leaves the home state.
+ */
 class VellumHaloView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -42,7 +60,28 @@ class VellumHaloView @JvmOverloads constructor(
     }
     private val ringBounds = RectF()
     private val markPath = Path()
-    private val accent = resolveAccentColor()
+
+    private var accent = resolveAccentColor()
+
+    /** Home-state visibility, 0..1, driven by [VellumStateHandler]. */
+    private var stateProgress = 1f
+
+    /** Whether the user has turned the Halo on at all. */
+    private var enabledByUser = false
+
+    /** Returns true when it handled the tap; false falls back to opening All Apps. */
+    private var onHaloClick: (() -> Boolean)? = null
+
+    private val themeListener = object : ThemeProvider.ColorSchemeChangeListener {
+        override fun onColorSchemeChanged() {
+            // ThemeProvider may notify from a background dispatcher.
+            post {
+                accent = resolveAccentColor()
+                rebuildShader()
+                invalidate()
+            }
+        }
+    }
 
     init {
         isClickable = true
@@ -50,34 +89,65 @@ class VellumHaloView @JvmOverloads constructor(
         setOnClickListener {
             performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             pulse()
-            context.launcherNullable?.stateManager?.goToState(LauncherState.ALL_APPS, true)
+            // Prefer the surface panel when context surfaces are on; otherwise the Halo would just
+            // duplicate the swipe-up to All Apps, which is not worth a home screen cell.
+            if (onHaloClick?.invoke() != true) {
+                context.launcherNullable?.stateManager?.goToState(LauncherState.ALL_APPS, true)
+            }
         }
         setOnLongClickListener {
             performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             context.startActivity(Intent(context, PreferenceActivity::class.java))
             true
         }
+        applyVisibility()
     }
 
-    fun setHomeVisible(visible: Boolean, animate: Boolean = true) {
-        isClickable = visible
-        isFocusable = visible
-        val targetAlpha = if (visible) 1f else 0f
-        val targetScale = if (visible) 1f else .78f
-        this.animate().cancel()
-        if (!animate || !ValueAnimator.areAnimatorsEnabled()) {
-            alpha = targetAlpha
-            scaleX = targetScale
-            scaleY = targetScale
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        ThemeProvider.INSTANCE.get(context).addListener(themeListener)
+    }
+
+    override fun onDetachedFromWindow() {
+        ThemeProvider.INSTANCE.get(context).removeListener(themeListener)
+        super.onDetachedFromWindow()
+    }
+
+    fun setOnHaloClick(action: (() -> Boolean)?) {
+        onHaloClick = action
+    }
+
+    fun setEnabledByUser(enabled: Boolean) {
+        if (enabledByUser == enabled) return
+        enabledByUser = enabled
+        applyVisibility()
+    }
+
+    fun setStateProgress(progress: Float) {
+        val clamped = progress.coerceIn(0f, 1f)
+        if (clamped == stateProgress) return
+        stateProgress = clamped
+        applyVisibility()
+    }
+
+    private fun applyVisibility() {
+        if (!enabledByUser) {
+            // GONE, not INVISIBLE: an invisible view still occupies its slot for hit testing
+            // purposes in some traversals, and we want zero footprint when it is switched off.
+            visibility = GONE
+            isClickable = false
+            isFocusable = false
             return
         }
-        this.animate()
-            .alpha(targetAlpha)
-            .scaleX(targetScale)
-            .scaleY(targetScale)
-            .setDuration(if (visible) 380L else 150L)
-            .setInterpolator(DecelerateInterpolator())
-            .start()
+        visibility = if (stateProgress <= .001f) INVISIBLE else VISIBLE
+        alpha = stateProgress
+        // Scale down as it leaves so it reads as receding rather than dissolving.
+        val scale = .78f + .22f * stateProgress
+        scaleX = scale
+        scaleY = scale
+        val interactive = stateProgress > .95f
+        isClickable = interactive
+        isFocusable = interactive
     }
 
     override fun drawableStateChanged() {
@@ -85,18 +155,20 @@ class VellumHaloView @JvmOverloads constructor(
         invalidate()
     }
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val cx = width / 2f
-        val cy = height / 2f
-        val radius = minOf(width, height) * .27f
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        rebuildShader()
+    }
 
-        surfacePaint.color = ColorUtils.setAlphaComponent(Color.BLACK, if (isPressed) 80 else 52)
-        canvas.drawCircle(cx, cy, radius + 9f * density, surfacePaint)
-
+    /**
+     * Built here rather than in [onDraw]: allocating a shader per frame is the classic way to turn
+     * a cheap view into a source of GC pressure the moment it starts animating.
+     */
+    private fun rebuildShader() {
+        if (width <= 0 || height <= 0) return
         ringPaint.shader = SweepGradient(
-            cx,
-            cy,
+            width / 2f,
+            height / 2f,
             intArrayOf(
                 ColorUtils.setAlphaComponent(Color.WHITE, 185),
                 ColorUtils.setAlphaComponent(accent, 245),
@@ -106,6 +178,17 @@ class VellumHaloView @JvmOverloads constructor(
             ),
             null,
         )
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val cx = width / 2f
+        val cy = height / 2f
+        val radius = minOf(width, height) * .30f
+
+        surfacePaint.color = ColorUtils.setAlphaComponent(Color.BLACK, if (isPressed) 80 else 52)
+        canvas.drawCircle(cx, cy, radius + 7f * density, surfacePaint)
+
         ringPaint.strokeWidth = if (isPressed) 3f * density else 2f * density
         ringBounds.set(cx - radius, cy - radius, cx + radius, cy + radius)
         canvas.save()
@@ -113,7 +196,6 @@ class VellumHaloView @JvmOverloads constructor(
         canvas.drawArc(ringBounds, 10f, 312f, false, ringPaint)
         canvas.restore()
 
-        markPaint.shader = null
         markPaint.color = Color.WHITE
         markPaint.strokeWidth = 2.35f * density
         markPath.reset()

@@ -53,6 +53,7 @@ import app.lawnchair.ui.popup.toOptionOrderString
 import app.lawnchair.ui.preferences.components.HiddenAppsInSearch
 import app.lawnchair.ui.preferences.data.liveinfo.LiveInformationManager
 import app.lawnchair.util.kotlinxJson
+import app.lawnchair.vellum.surface.VellumSurfaceSet
 import app.lawnchair.views.overlay.FullScreenOverlayMode
 import com.android.launcher3.BuildConfig
 import com.android.launcher3.InvariantDeviceProfile
@@ -71,6 +72,7 @@ import com.android.launcher3.util.DaggerSingletonObject
 import com.android.launcher3.util.DynamicResource
 import com.android.launcher3.util.SafeCloseable
 import com.patrykmichalik.opto.core.PreferenceManager
+import com.patrykmichalik.opto.core.first
 import com.patrykmichalik.opto.core.firstBlocking
 import com.patrykmichalik.opto.core.setBlocking
 import javax.inject.Inject
@@ -287,6 +289,43 @@ class PreferenceManager2 @Inject constructor(
     val themedHotseatQsb = preference(
         key = booleanPreferencesKey(name = "themed_hotseat_qsb"),
         defaultValue = context.resources.getBoolean(R.bool.config_default_themed_hotseat_qsb),
+    )
+
+    /**
+     * Vellum's ambient canvas: the light field drawn behind the workspace.
+     * Enabled by default, but always removable — it paints over the user's wallpaper.
+     */
+    val vellumAmbientEnabled = preference(
+        key = booleanPreferencesKey(name = "vellum_ambient_enabled"),
+        defaultValue = context.resources.getBoolean(R.bool.config_default_vellum_ambient_enabled),
+    )
+
+    val vellumAmbientIntensity = preference(
+        key = floatPreferencesKey(name = "vellum_ambient_intensity"),
+        defaultValue = resourceProvider.getFloat(R.dimen.config_default_vellum_ambient_intensity),
+    )
+
+    /**
+     * Vellum's Halo shortcut. Off by default: it is an overlay that sits above the
+     * workspace and consumes touches over one home screen cell, so it is opt-in only.
+     */
+    val vellumHaloEnabled = preference(
+        key = booleanPreferencesKey(name = "vellum_halo_enabled"),
+        defaultValue = context.resources.getBoolean(R.bool.config_default_vellum_halo_enabled),
+    )
+
+    /**
+     * Vellum Context Surfaces: the home screen's atmosphere and surface panel follow the time of
+     * day. Purely additive — the workspace grid is never rearranged.
+     */
+    val vellumSurfacesEnabled = preference(
+        key = booleanPreferencesKey(name = "vellum_surfaces_enabled"),
+        defaultValue = context.resources.getBoolean(R.bool.config_default_vellum_surfaces_enabled),
+    )
+
+    val vellumSurfaceSet = serializablePreference(
+        key = stringPreferencesKey(name = "vellum_surface_set"),
+        defaultValue = VellumSurfaceSet(),
     )
 
     val isHotseatEnabled = preference(
@@ -860,6 +899,28 @@ class PreferenceManager2 @Inject constructor(
             false
         },
     )
+
+    /** Adds [key] to the surface with [surfaceId], or removes it when it is already there. */
+    suspend fun toggleAppInSurface(surfaceId: String, key: ComponentKey) {
+        val current = vellumSurfaceSet.first()
+        vellumSurfaceSet.set(
+            value = current.copy(
+                surfaces = current.surfaces.map { surface ->
+                    when {
+                        surface.id != surfaceId -> surface
+                        key in surface.apps -> surface.copy(apps = surface.apps - key)
+                        else -> surface.copy(apps = surface.apps + key)
+                    }
+                },
+            ),
+        )
+    }
+
+    /**
+     * Reads the in-memory snapshot rather than blocking on DataStore: this runs while building an
+     * app's long-press popup, which is on the main thread.
+     */
+    fun isAppInSurface(surfaceId: String, key: ComponentKey): Boolean = vellumSurfaceSet.firstCached(this).surfaces.firstOrNull { it.id == surfaceId }?.apps?.contains(key) == true
 
     private inline fun <reified T> serializablePreference(
         key: Preferences.Key<String>,

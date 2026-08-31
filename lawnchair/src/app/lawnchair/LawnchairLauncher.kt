@@ -52,7 +52,10 @@ import app.lawnchair.util.getThemedIconPacksInstalled
 import app.lawnchair.util.unsafeLazy
 import app.lawnchair.vellum.VellumAmbientView
 import app.lawnchair.vellum.VellumHaloView
+import app.lawnchair.vellum.VellumStateHandler
 import app.lawnchair.vellum.VellumWelcomeView
+import app.lawnchair.vellum.surface.SurfaceEngine
+import app.lawnchair.vellum.surface.SurfacePanel
 import app.lawnchair.views.LawnchairFloatingSurfaceView
 import com.android.launcher3.AbstractFloatingView
 import com.android.launcher3.BaseActivity
@@ -110,19 +113,11 @@ class LawnchairLauncher : QuickstepLauncher() {
     private val themeProvider by unsafeLazy { ThemeProvider.INSTANCE.get(this) }
     private var vellumAmbientView: VellumAmbientView? = null
     private var vellumHaloView: VellumHaloView? = null
-    private val vellumHomeStateListener = object : StateManager.StateListener<LauncherState> {
-        override fun onStateTransitionStart(toState: LauncherState) {
-            val isHome = toState == LauncherState.NORMAL
-            vellumAmbientView?.setHomeVisible(isHome)
-            vellumHaloView?.setHomeVisible(isHome)
-        }
+    private val vellumStateHandler by unsafeLazy { VellumStateHandler(this) }
 
-        override fun onStateTransitionComplete(finalState: LauncherState) {
-            val isHome = finalState == LauncherState.NORMAL
-            vellumAmbientView?.setHomeVisible(isHome)
-            vellumHaloView?.setHomeVisible(isHome)
-        }
-    }
+    /** Vellum Context Surfaces. Null until [initializeVellumExperience] has run. */
+    var surfaceEngine: SurfaceEngine? = null
+        private set
     private val noStatusBarStateListener = object : StateManager.StateListener<LauncherState> {
         override fun onStateTransitionStart(toState: LauncherState) {
             if (toState is OverviewState) {
@@ -286,6 +281,7 @@ class LawnchairLauncher : QuickstepLauncher() {
     override fun collectStateHandlers(out: MutableList<StateHandler<LauncherState>>) {
         super.collectStateHandlers(out)
         out.add(SearchBarStateHandler(this))
+        out.add(vellumStateHandler)
     }
 
     override fun getAllAppsItemLongClickListener(): View.OnLongClickListener {
@@ -301,7 +297,12 @@ class LawnchairLauncher : QuickstepLauncher() {
     override fun getSupportedShortcuts(container: Int): Stream<SystemShortcut.Factory<*>> = Stream.concat(
         super.getSupportedShortcuts(container),
         Stream.concat(
-            Stream.of(LawnchairShortcut.UNINSTALL, LawnchairShortcut.CUSTOMIZE, LawnchairShortcut.OPEN_IN_STORE),
+            Stream.of(
+                LawnchairShortcut.UNINSTALL,
+                LawnchairShortcut.CUSTOMIZE,
+                LawnchairShortcut.OPEN_IN_STORE,
+                LawnchairShortcut.PIN_TO_SURFACE,
+            ),
             if (LawnchairApp.isRecentsEnabled) Stream.of(LawnchairShortcut.PAUSE_APPS) else Stream.empty(),
         ),
     )
@@ -490,6 +491,8 @@ class LawnchairLauncher : QuickstepLauncher() {
         super.onResume()
         restartIfPending()
         refreshPredictionContainersFromModel()
+        // Catches surface boundaries that passed while the device was asleep.
+        surfaceEngine?.refresh()
 
         dragLayer.viewTreeObserver.addOnDrawListener(
             object : ViewTreeObserver.OnDrawListener {
@@ -518,7 +521,8 @@ class LawnchairLauncher : QuickstepLauncher() {
 
     override fun onDestroy() {
         vellumAmbientView?.unbindWorkspace()
-        stateManager.removeStateListener(vellumHomeStateListener)
+        surfaceEngine?.stop()
+        surfaceEngine = null
         super.onDestroy()
         // Only actually closes if required, safe to call if not enabled
         SmartspacerClient.close()
@@ -563,14 +567,48 @@ class LawnchairLauncher : QuickstepLauncher() {
     }
 
     private fun initializeVellumExperience() {
-        vellumAmbientView = findViewById<VellumAmbientView>(R.id.vellum_ambient).also {
-            it.bindWorkspace(workspace)
-        }
-        vellumHaloView = findViewById(R.id.vellum_halo)
-        stateManager.addStateListener(vellumHomeStateListener)
-        val isHome = isInState(LauncherState.NORMAL)
-        vellumAmbientView?.setHomeVisible(isHome, animate = false)
-        vellumHaloView?.setHomeVisible(isHome, animate = false)
+        val ambient = findViewById<VellumAmbientView>(R.id.vellum_ambient)
+        val halo = findViewById<VellumHaloView>(R.id.vellum_halo)
+        vellumAmbientView = ambient
+        vellumHaloView = halo
+
+        // The ambient layer paints over the user's wallpaper, and the Halo covers a home screen
+        // cell. Both are therefore preference-driven, and unbind entirely when switched off.
+        preferenceManager2.vellumAmbientEnabled.get()
+            .distinctUntilChanged()
+            .onEach { enabled ->
+                if (enabled) ambient.bindWorkspace(workspace) else ambient.unbindWorkspace()
+                ambient.setEnabledByUser(enabled)
+            }
+            .launchIn(lifecycleScope)
+
+        preferenceManager2.vellumAmbientIntensity.get()
+            .distinctUntilChanged()
+            .onEach { ambient.setIntensity(it) }
+            .launchIn(lifecycleScope)
+
+        preferenceManager2.vellumHaloEnabled.get()
+            .distinctUntilChanged()
+            .onEach { halo.setEnabledByUser(it) }
+            .launchIn(lifecycleScope)
+
+        // Context surfaces: the active surface retints the ambient layer, and the Halo becomes the
+        // way into the surface panel rather than a duplicate of the swipe-up to All Apps.
+        val engine = SurfaceEngine(this, lifecycleScope)
+        surfaceEngine = engine
+        engine.start()
+        engine.activeSurface
+            .onEach { surface ->
+                if (surface == null) {
+                    ambient.setSurface(accent = null, intensity = 1f)
+                } else {
+                    ambient.setSurface(surface.accent, surface.ambientIntensity)
+                }
+            }
+            .launchIn(lifecycleScope)
+        halo.setOnHaloClick { SurfacePanel.show(this, engine) != null }
+
+        vellumStateHandler.jumpToCurrentState()
         VellumWelcomeView.showIfNeeded(dragLayer)
     }
 

@@ -141,7 +141,8 @@ class ThemeProvider @Inject constructor(
         val INSTANCE = DaggerSingletonObject(LauncherAppComponent::getThemeProvider)
     }
 
-    sealed interface ColorSchemeChangeListener {
+    // Not sealed: implemented from other packages (AccentColorExtractor, Vellum's ambient layer).
+    interface ColorSchemeChangeListener {
         fun onColorSchemeChanged()
     }
 }

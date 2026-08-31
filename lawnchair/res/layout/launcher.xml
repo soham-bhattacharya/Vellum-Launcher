@@ -67,16 +67,19 @@
             android:layout_gravity="bottom|center_horizontal"
             android:theme="@style/HomeScreenElementTheme" />
 
+        <!-- Opt-in overlay. Starts GONE so it can never intercept a touch before the
+             user preference has been read; VellumHaloView owns its visibility from there. -->
         <app.lawnchair.vellum.VellumHaloView
             android:id="@+id/vellum_halo"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_gravity="top|end"
             android:layout_marginTop="22dp"
             android:layout_marginEnd="14dp"
             android:contentDescription="@string/vellum_halo_description"
             android:focusable="true"
-            android:importantForAccessibility="yes" />
+            android:importantForAccessibility="yes"
+            android:visibility="gone" />
 
         <app.lawnchair.views.EditModePageStrip
             android:id="@+id/edit_mode_page_strip"

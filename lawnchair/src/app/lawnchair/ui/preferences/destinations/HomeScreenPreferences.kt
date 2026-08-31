@@ -46,6 +46,7 @@ import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.HomeScreenGrid
+import app.lawnchair.ui.preferences.navigation.VellumSurfaces
 import app.lawnchair.util.collectAsStateBlocking
 import com.android.launcher3.LauncherAppState
 import com.android.launcher3.LauncherSettings
@@ -131,6 +132,41 @@ fun HomeScreenPreferences(
                 adapter = prefs2.closingAppOverlay.getAdapter(),
                 label = stringResource(id = R.string.app_closing_animation),
             )
+        }
+        PreferenceGroup(heading = stringResource(id = R.string.vellum_label)) {
+            val ambientEnabledAdapter = prefs2.vellumAmbientEnabled.getAdapter()
+            SwitchPreference(
+                adapter = ambientEnabledAdapter,
+                label = stringResource(id = R.string.vellum_ambient_label),
+                description = stringResource(id = R.string.vellum_ambient_description),
+            )
+            ExpandAndShrink(visible = ambientEnabledAdapter.state.value) {
+                SliderPreference(
+                    label = stringResource(id = R.string.vellum_ambient_intensity_label),
+                    adapter = prefs2.vellumAmbientIntensity.getAdapter(),
+                    valueRange = 0f..1f,
+                    step = .05f,
+                    showAsPercentage = true,
+                )
+            }
+            SwitchPreference(
+                adapter = prefs2.vellumHaloEnabled.getAdapter(),
+                label = stringResource(id = R.string.vellum_halo_label),
+                description = stringResource(id = R.string.vellum_halo_preference_description),
+            )
+            val surfacesEnabledAdapter = prefs2.vellumSurfacesEnabled.getAdapter()
+            SwitchPreference(
+                adapter = surfacesEnabledAdapter,
+                label = stringResource(id = R.string.vellum_surfaces_label),
+                description = stringResource(id = R.string.vellum_surfaces_description),
+            )
+            ExpandAndShrink(visible = surfacesEnabledAdapter.state.value) {
+                NavigationActionPreference(
+                    label = stringResource(id = R.string.vellum_surfaces_heading),
+                    destination = VellumSurfaces,
+                    subtitle = stringResource(id = R.string.vellum_surfaces_edit_subtitle),
+                )
+            }
         }
         PreferenceGroup(heading = stringResource(id = R.string.wallpaper)) {
             SwitchPreference(

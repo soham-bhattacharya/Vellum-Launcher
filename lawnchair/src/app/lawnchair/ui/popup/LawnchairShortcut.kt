@@ -17,15 +17,18 @@ import android.net.Uri
 import android.os.UserHandle
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import app.lawnchair.LawnchairLauncher
 import app.lawnchair.override.CustomizeAppDialog
 import app.lawnchair.preferences2.PreferenceManager2
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.ui.preferences.PreferenceActivity
 import app.lawnchair.ui.preferences.navigation.AppDrawerAppListToFolder
+import app.lawnchair.vellum.surface.VellumSurface
 import app.lawnchair.views.ComposeBottomSheet
 import com.android.launcher3.AbstractFloatingView
 import com.android.launcher3.LauncherSettings.Favorites.ITEM_TYPE_APPLICATION
@@ -45,6 +48,7 @@ import com.android.launcher3.util.PackageManagerHelper
 import com.android.launcher3.views.ActivityContext
 import com.android.launcher3.views.OptionsPopupView
 import java.net.URISyntaxException
+import kotlinx.coroutines.launch
 
 class LawnchairShortcut {
 
@@ -104,6 +108,21 @@ class LawnchairShortcut {
             return launcher.appsView.appsStore.getApp(key)
         }
 
+        /**
+         * Pins or unpins an app on the surface that is active right now. Scoped to the active
+         * surface rather than offering a submenu of all four: the common case by far is "I use this
+         * app at this time of day", and that is exactly one tap.
+         */
+        val PIN_TO_SURFACE =
+            SystemShortcut.Factory { activity: LawnchairLauncher, itemInfo: ItemInfo, originalView: View ->
+                val surface = activity.surfaceEngine?.activeSurface?.value ?: return@Factory null
+                val component = itemInfo.targetComponent ?: return@Factory null
+                if (itemInfo.itemType != ITEM_TYPE_APPLICATION) return@Factory null
+                val key = ComponentKey(component, itemInfo.user)
+                val pinned = PreferenceManager2.getInstance(activity).isAppInSurface(surface.id, key)
+                PinToSurface(activity, key, surface, pinned, itemInfo, originalView)
+            }
+
         val UNINSTALL =
             SystemShortcut.Factory { activity: ActivityContext, itemInfo: ItemInfo, view: View ->
                 val prefs2 = PreferenceManager2.INSTANCE.get(activity.asContext())
@@ -158,6 +177,35 @@ class LawnchairShortcut {
             }
 
             PauseApps(activity, itemInfo, originalView)
+        }
+    }
+
+    class PinToSurface(
+        private val launcher: LawnchairLauncher,
+        private val key: ComponentKey,
+        private val surface: VellumSurface,
+        private val pinned: Boolean,
+        itemInfo: ItemInfo,
+        originalView: View,
+    ) : SystemShortcut<LawnchairLauncher>(
+        R.drawable.ic_vellum_mark,
+        if (pinned) R.string.vellum_unpin_from_surface else R.string.vellum_pin_to_surface,
+        launcher,
+        itemInfo,
+        originalView,
+    ) {
+
+        // The base class calls setText(resId) directly, which cannot carry the surface name.
+        override fun setIconAndLabelFor(iconView: View, labelView: TextView) {
+            super.setIconAndLabelFor(iconView, labelView)
+            labelView.text = launcher.getString(mLabelResId, surface.label(launcher))
+        }
+
+        override fun onClick(v: View) {
+            AbstractFloatingView.closeAllOpenViews(launcher)
+            launcher.lifecycleScope.launch {
+                PreferenceManager2.getInstance(launcher).toggleAppInSurface(surface.id, key)
+            }
         }
     }
 

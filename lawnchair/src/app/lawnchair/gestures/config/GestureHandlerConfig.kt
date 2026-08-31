@@ -7,6 +7,7 @@ import android.graphics.drawable.Icon
 import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.createBitmap
+import app.lawnchair.gestures.handlers.CycleSurfaceGestureHandler
 import app.lawnchair.gestures.handlers.GestureHandler
 import app.lawnchair.gestures.handlers.NoOpGestureHandler
 import app.lawnchair.gestures.handlers.OpenAppDrawerGestureHandler
@@ -17,6 +18,7 @@ import app.lawnchair.gestures.handlers.OpenAssistantHandler
 import app.lawnchair.gestures.handlers.OpenNotificationsHandler
 import app.lawnchair.gestures.handlers.OpenQuickSettingsHandler
 import app.lawnchair.gestures.handlers.OpenSearchGestureHandler
+import app.lawnchair.gestures.handlers.OpenSurfacePanelGestureHandler
 import app.lawnchair.gestures.handlers.RecentsGestureHandler
 import app.lawnchair.gestures.handlers.SleepGestureHandler
 import app.lawnchair.theme.color.tokens.ColorTokens
@@ -127,6 +129,24 @@ sealed class GestureHandlerConfig {
     data object OpenAssistant :
         Simple(R.string.gesture_handler_open_assistant, ::OpenAssistantHandler) {
         override val iconRes = R.drawable.ic_mic_flat
+    }
+
+    @Serializable
+    @SerialName("openSurfacePanel")
+    data object OpenSurfacePanel :
+        Simple(R.string.gesture_handler_open_surface_panel, ::OpenSurfacePanelGestureHandler) {
+        override val iconRes = R.drawable.ic_vellum_mark
+
+        override fun isExternallyInvokable() = true
+    }
+
+    @Serializable
+    @SerialName("cycleSurface")
+    data object CycleSurface :
+        Simple(R.string.gesture_handler_cycle_surface, ::CycleSurfaceGestureHandler) {
+        override val iconRes = R.drawable.ic_vellum_mark
+
+        override fun isExternallyInvokable() = true
     }
 
     @Serializable

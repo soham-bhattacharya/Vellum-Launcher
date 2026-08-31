@@ -27,6 +27,50 @@
     <string name="vellum_halo_description">Vellum Halo. Tap to open apps. Hold for settings.</string>
     <string name="vellum_welcome_accessibility">Welcome to Vellum. A quieter kind of home. Tap Enter Vellum to continue.</string>
 
+    <!-- Vellum preferences -->
+    <string name="vellum_label">Vellum</string>
+    <string name="vellum_ambient_label">Ambient canvas</string>
+    <string name="vellum_ambient_description">A soft field of light behind your home screen that drifts as you change pages</string>
+    <string name="vellum_ambient_intensity_label">Ambient intensity</string>
+    <string name="vellum_halo_label">Show the Halo</string>
+    <string name="vellum_halo_preference_description">A shortcut in the top-right corner. It covers one home screen cell.</string>
+
+    <!-- Context Surfaces -->
+    <string name="vellum_surfaces_label">Context surfaces</string>
+    <string name="vellum_surfaces_description">The home screen atmosphere follows the time of day. Your icons never move.</string>
+    <string name="vellum_surface_morning">Morning</string>
+    <string name="vellum_surface_day">Day</string>
+    <string name="vellum_surface_evening">Evening</string>
+    <string name="vellum_surface_night">Night</string>
+    <string name="vellum_surface_panel_title">Right now</string>
+    <string name="vellum_surface_panel_empty">No apps on this surface yet. Long-press an app to pin it here, or tap to choose apps now.</string>
+    <string name="vellum_surface_scheduled">Scheduled</string>
+    <string name="vellum_surface_pinned">Pinned until %1$s</string>
+    <string name="vellum_surface_panel_accessibility">Vellum surface panel. Shows the apps for the current time of day.</string>
+    <string name="gesture_handler_open_surface_panel">Open surface panel</string>
+    <string name="gesture_handler_cycle_surface">Switch to next surface</string>
+    <string name="vellum_pin_to_surface">Pin to %1$s</string>
+    <string name="vellum_unpin_from_surface">Unpin from %1$s</string>
+    <string name="vellum_surfaces_heading">Surfaces</string>
+    <string name="vellum_surfaces_edit_subtitle">Names, times, colours, and apps</string>
+    <string name="vellum_surfaces_explainer">Surfaces change the colour of your home screen and what the surface panel shows. They never move your icons.</string>
+    <string name="vellum_surfaces_reset">Reset surfaces to defaults</string>
+    <string name="vellum_surfaces_reset_confirm">This discards your surface names, times, colours, and pinned apps.</string>
+    <string name="vellum_surface_off">Off</string>
+    <string name="vellum_surface_enabled_label">Use this surface</string>
+    <string name="vellum_surface_name_label">Name</string>
+    <string name="vellum_surface_window_heading">When</string>
+    <string name="vellum_surface_window_description">Surfaces run back to back. Changing one end moves the boundary it shares with its neighbour.</string>
+    <string name="vellum_surface_starts_at">Starts at</string>
+    <string name="vellum_surface_ends_at">Ends at</string>
+    <string name="vellum_surface_atmosphere_heading">Atmosphere</string>
+    <string name="vellum_surface_apps_heading">Apps</string>
+    <string name="vellum_surface_choose_apps">Choose apps</string>
+    <plurals name="vellum_surface_app_count">
+        <item quantity="one">%1$d app</item>
+        <item quantity="other">%1$d apps</item>
+    </plurals>
+
     <string name="action_create">Create</string>
     <string name="action_backup">Backup</string>
     <string name="action_restore">Restore</string>
@@ -80,7 +124,7 @@
 
     <!-- When mentioning settings UI -->
     <string name="smartspace_preferences">Preferences</string>
-    <string name="settings_button_text">Vellum settings</string>
+    <string name="settings_button_text">Home settings</string>
     <string name="system_settings">System settings</string>
     <string name="title_change_settings">Change settings</string>
 

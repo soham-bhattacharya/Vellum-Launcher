@@ -14,6 +14,8 @@ val gestureHandlerOptions = listOf(
     GestureHandlerOption.OpenSearch,
     GestureHandlerOption.OpenApp,
     GestureHandlerOption.OpenAssistant,
+    GestureHandlerOption.OpenSurfacePanel,
+    GestureHandlerOption.CycleSurface,
 )
 
 private val optionsDisabledInDeckLayout = setOf(

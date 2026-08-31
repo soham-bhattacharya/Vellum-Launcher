@@ -71,7 +71,6 @@
         <item quantity="other">%1$d Aplikasi</item>
     </plurals>
     <string name="dt2s_admin_hint_title">Izin Admin Dibutuhkan</string>
-    <string name="dt2s_admin_hint">Untuk menggunakan Ketuk Dua Kali untuk Tidur, atur Lawnchair sebagai aplikasi admin perangkat. Ketuk \"Buka Pengaturan,\" lalu ketuk \"Aktifkan aplikasi admin perangkat ini.\"</string>
     <string name="dt2s_admin_warning">Ketuk Dua Kali untuk Tidur akan dimatikan.</string>
     <string name="dt2s_a11y_hint_title">Aktifkan Layanan Aksesibilitas</string>
     <string name="dt2s_a11y_hint">Untuk menggunakan Ketuk Dua Kali untuk Tidur, aktifkan layanan aksesibilitas Lawnchair. Ketuk \"Buka Pengaturan,\" lalu pilih \"Lawnchair\" dan aktifkan \"Gunakan Lawnchair\".</string>
@@ -104,7 +103,6 @@
     <string name="missing_notification_access_description">Akses notifikasi diperlukan.</string>
     <string name="msg_missing_notification_access">Untuk menggunakan Titik Notifikasi, berikan <xliff:g id="name" example="Aplikasi Saya">%1$s</xliff:g> akses ke notifikasi.</string>
     <string name="title_change_settings">Ubah Pengaturan</string>
-    <string name="debug_restart_launcher">Muat ulang Lawnchair</string>
     <string name="pref_fonts_missing_font">Font tidak ditemukan.</string>
     <string name="font_variant_italic">Miring</string>
     <string name="font_weight_thin">Tipis</string>
@@ -143,7 +141,6 @@
     <string name="dynamic">Dinamis</string>
     <string name="all_apps_search_market_message">Cari Aplikasi Lainnya</string>
     <string name="show_app_search_bar">Tampilkan Bilah Pencarian</string>
-    <string name="lawnchair_bug_report">Laporan Bug Lawnchair</string>
     <string name="crash_report_notif_title">%1$s berhenti</string>
     <string name="action_copy_link">Salin Tautan</string>
     <string name="action_copy">Salin</string>

@@ -101,6 +101,8 @@ public abstract class AbstractFloatingView extends LinearLayout implements Touch
     public static final int TYPE_OPTIONS_POPUP_DIALOG = 1 << 14;
 
     public static final int TYPE_PIN_WIDGET_FROM_EXTERNAL_POPUP = 1 << 15;
+    // Vellum: the context surface panel.
+    public static final int TYPE_VELLUM_SURFACE_PANEL = 1 << 16;
     public static final int TYPE_TASKBAR_EDUCATION_DIALOG = 1 << 17;
     public static final int TYPE_TASKBAR_ALL_APPS = 1 << 18;
     public static final int TYPE_ADD_TO_HOME_CONFIRMATION = 1 << 19;
@@ -121,7 +123,7 @@ public abstract class AbstractFloatingView extends LinearLayout implements Touch
             | TYPE_TASKBAR_EDUCATION_DIALOG | TYPE_TASKBAR_ALL_APPS | TYPE_OPTIONS_POPUP_DIALOG
             | TYPE_ADD_TO_HOME_CONFIRMATION | TYPE_TASKBAR_OVERLAY_PROXY
             | TYPE_TASKBAR_PINNING_POPUP | TYPE_PIN_IME_POPUP | TYPE_ONE_GRID_MIGRATION_EDU
-            | TYPE_NUDGE | TYPE_COMPOSE_VIEW;
+            | TYPE_NUDGE | TYPE_COMPOSE_VIEW | TYPE_VELLUM_SURFACE_PANEL;
 
     // Type of popups which should be kept open during launcher rebind
     public static final int TYPE_REBIND_SAFE = TYPE_WIDGETS_FULL_SHEET

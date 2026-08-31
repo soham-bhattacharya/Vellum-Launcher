@@ -146,6 +146,18 @@ data object HomeScreenPopupEditor : PreferenceRoute, PreferenceDeepLink {
     override val deepLink = "$URI/home-screen-popup-editor"
 }
 
+// Vellum context surface routes
+@Serializable
+data object VellumSurfaces : PreferenceRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/vellum-surfaces"
+}
+
+@Serializable
+data class VellumSurfaceEditor(val surfaceId: String) : PreferenceRoute
+
+@Serializable
+data class VellumSurfaceApps(val surfaceId: String) : PreferenceRoute
+
 // Dock section routes
 @Serializable
 data object DockSearchProvider : PreferenceRoute, PreferenceDeepLink {

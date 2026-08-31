@@ -52,9 +52,12 @@ import app.lawnchair.ui.preferences.destinations.QuickstepPreferences
 import app.lawnchair.ui.preferences.destinations.SearchPreferences
 import app.lawnchair.ui.preferences.destinations.SearchProviderPreferences
 import app.lawnchair.ui.preferences.destinations.SelectAppsForDrawerFolder
+import app.lawnchair.ui.preferences.destinations.SelectAppsForSurface
 import app.lawnchair.ui.preferences.destinations.SelectIconPreference
 import app.lawnchair.ui.preferences.destinations.ShapePreference
 import app.lawnchair.ui.preferences.destinations.SmartspacePreferences
+import app.lawnchair.ui.preferences.destinations.VellumSurfaceEditorPreferences
+import app.lawnchair.ui.preferences.destinations.VellumSurfacesPreferences
 import com.android.launcher3.util.ComponentKey
 import soup.compose.material.motion.animation.materialSharedAxisXIn
 import soup.compose.material.motion.animation.materialSharedAxisXOut
@@ -136,6 +139,17 @@ fun PreferenceNavigation(
         composable<HomeScreenGrid>(
             deepLinks = getDeepLink(HomeScreenGrid),
         ) { HomeScreenGridPreferences() }
+        composable<VellumSurfaces>(
+            deepLinks = getDeepLink(VellumSurfaces),
+        ) { VellumSurfacesPreferences() }
+        composable<VellumSurfaceEditor> { backStackEntry ->
+            val route: VellumSurfaceEditor = backStackEntry.toRoute()
+            VellumSurfaceEditorPreferences(surfaceId = route.surfaceId)
+        }
+        composable<VellumSurfaceApps> { backStackEntry ->
+            val route: VellumSurfaceApps = backStackEntry.toRoute()
+            SelectAppsForSurface(surfaceId = route.surfaceId)
+        }
         composable<HomeScreenPopupEditor>(
             deepLinks = getDeepLink(HomeScreenPopupEditor),
         ) { LauncherPopupPreference() }

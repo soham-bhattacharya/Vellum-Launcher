@@ -39,7 +39,6 @@
     <!-- <string name="version" /> (unknown source) -->
     <!-- PreferencesOverflowMenu() in PreferencesDashboard -->
     <string name="app_info_drop_target_label">Maelezo ya Programu</string>
-    <string name="debug_restart_launcher">Anzisha Lawnchair</string>
     <string name="experimental_features_label">Vipengele vya Majaribio</string>
     <!-- ExperimentalFeaturesPreferences -->
     <!-- <string name="experimental_features_label" />-->
@@ -229,7 +228,6 @@
     <string name="smartspace_calendar_persian">Kiajemi</string>
     <string name="smartspace_preferences">Mapendeleo</string>
     <string name="smartspace_widget_toggle_label">Onyesha kwenye Skrini ya Nyumbani</string>
-    <string name="smartspace_widget_toggle_description">Kwa Mtazamo inaweza kuongezwa kwa mikono kwa kuwekan\"Lawnchair \" wijeti.</string>
     <string name="smartspace_mode_label">Kwa Mtazamo Mhudumu</string>
     <string name="smartspace_mode_lawnchair">Lawnchair</string>
     <string name="smartspace_mode_google">Google</string>
@@ -345,7 +343,6 @@
     <string name="item_removed">Kipengee kimeondolewa.</string>
     <string name="all_apps_no_search_results">Hakuna programu zilizopatikana zinazolingana \"<xliff:g example="Android" id="query">%1$s</xliff:g>\".</string>
     <string name="dt2s_admin_hint_title">Ruhusa za Msimamizi Zinahitajika</string>
-    <string name="dt2s_admin_hint">Ili kutumia Gusa Mara Mbili ili Kulala, weka Lawnchair kama programu ya msimamizi wa kifaa. Gusa Fungua Mipangilio, kisha uguse \"Washa programu ya msimamizi wa kifaa hiki.\"</string>
     <string name="dt2s_admin_warning">Gusa Mara mbili ili Ulale itazimwa.</string>
     <string name="dt2s_a11y_hint_title">Washa Huduma ya Ufikiaji</string>
     <string name="dt2s_a11y_hint">Ili kutumia Gusa Mara Mbili ili Ulale, washa huduma ya ufikiaji wa Lawnchair. Gusa Fungua Mipangilio, kisha uchague Lawnchair na uwashe Tumia Lawnchair.</string>
@@ -357,7 +354,6 @@
     <string name="hide_from_drawer">Ficha kutoka kwenye Droo ya Programu</string>
     <string name="suggestion_pref_screen_title">Suggestions</string>
     <!-- Bug reporting -->
-    <string name="lawnchair_bug_report">Ripoti ya Hitilafu ya Lawnchair</string>
     <string name="crash_report_notif_title">%1$s Imesimama Ghafla</string>
     <string name="action_upload_crash_report">Pakia kumbukumbu ya kuacha kufanya kazi</string>
     <string name="action_copy_link">Nakili kiungo</string>

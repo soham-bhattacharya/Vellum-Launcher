@@ -284,7 +284,18 @@ android {
         }
     }
 
+    // Vellum: a plain JVM unit test source set for logic that needs no device. The AOSP test
+    // targets under tests/ are built by Android.bp, not by this Gradle build.
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     sourceSets {
+        test {
+            java.srcDirs = ['tests/vellum']
+            kotlin.directories.addAll('tests/vellum')
+        }
+
         main {
             res.srcDirs = ['res']
 
@@ -375,6 +386,10 @@ composeCompiler {
 addFrameworkJar('framework-16.jar')
 
 dependencies {
+    // Vellum unit tests (tests/vellum), run with testLawnWithQuickstepGithubDebugUnitTest.
+    testImplementation libs.junit
+    testImplementation libs.google.truth
+
     implementation projects.iconloaderlib
     implementation projects.searchuilib
     implementation projects.animationlib
