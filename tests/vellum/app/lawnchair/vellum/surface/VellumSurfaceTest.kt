@@ -156,4 +156,120 @@ class VellumSurfaceTest {
 
         assertThat(set.withEnd("does-not-exist", hm(3))).isEqualTo(set)
     }
+
+    @Test
+    fun withEnd_wrapsWhenMinuteExceedsDay() {
+        val set = VellumSurfaceSet()
+        // 2240 mod 1440 == 800 -> 13:20, still between morning start (05:00) and day end (17:00)
+        // so tiling is preserved.
+        val moved = set.withEnd(VellumSurface.ID_MORNING, 2240)
+
+        assertThat(moved.byId(VellumSurface.ID_MORNING)!!.endMinute).isEqualTo(800)
+        assertThat(moved.byId(VellumSurface.ID_DAY)!!.startMinute).isEqualTo(800)
+        for (minute in 0 until VellumSurface.MINUTES_PER_DAY) {
+            assertThat(moved.surfaces.filter { it.contains(minute) }).hasSize(1)
+        }
+    }
+
+    @Test
+    fun withStart_wrapsNegativeMinute() {
+        val set = VellumSurfaceSet()
+        val moved = set.withStart(VellumSurface.ID_DAY, -30)
+        // -30 mod 1440 == 1410 -> 23:30
+        assertThat(moved.byId(VellumSurface.ID_DAY)!!.startMinute).isEqualTo(1410)
+        assertThat(moved.byId(VellumSurface.ID_MORNING)!!.endMinute).isEqualTo(1410)
+    }
+
+    @Test
+    fun withEnd_singleSurfaceMovesBothEndsTogether() {
+        val only = VellumSurface(id = "only", startMinute = hm(9), endMinute = hm(9), accent = 0, ambientIntensity = .5f)
+        val set = VellumSurfaceSet(surfaces = listOf(only))
+        val moved = set.withEnd("only", hm(14))
+
+        assertThat(moved.byId("only")!!.startMinute).isEqualTo(hm(14))
+        assertThat(moved.byId("only")!!.endMinute).isEqualTo(hm(14))
+        // Still covers whole day
+        for (minute in 0 until VellumSurface.MINUTES_PER_DAY) {
+            assertThat(moved.surfaces.filter { it.contains(minute) }).hasSize(1)
+        }
+    }
+
+    @Test
+    fun surfaceAt_whenPrimaryDisabled_fallsToFirstEnabledNotDisabled() {
+        // Disable morning (05:00-11:00). At 08:00 the disabled window would have claimed it,
+        // but the contract is to pick the first enabled surface that contains it, falling back to
+        // the first enabled overall when none contains it.
+        val set = VellumSurfaceSet(
+            surfaces = VellumSurfaceSet().surfaces.map {
+                if (it.id == VellumSurface.ID_MORNING) it.copy(enabled = false) else it
+            },
+        )
+        // 08:00 is inside disabled morning; should NOT return morning, should return something else.
+        val atEight = set.surfaceAt(hm(8))
+        assertThat(atEight).isNotNull()
+        assertThat(atEight!!.id).isNotEqualTo(VellumSurface.ID_MORNING)
+        // 06:00 also inside disabled window — fallback is first enabled (day) since gap.
+        assertThat(set.surfaceAt(hm(6))?.enabled).isTrue()
+    }
+
+    @Test
+    fun surfaceAt_withTwoConsecutiveDisabled_returnsNearestEnabled() {
+        val set = VellumSurfaceSet(
+            surfaces = VellumSurfaceSet().surfaces.map {
+                when (it.id) {
+                    VellumSurface.ID_MORNING, VellumSurface.ID_DAY -> it.copy(enabled = false)
+                    else -> it
+                }
+            },
+        )
+        // 10:00 would be morning, 14:00 would be day — both disabled.
+        assertThat(set.surfaceAt(hm(10))?.id).isNotEqualTo(VellumSurface.ID_MORNING)
+        assertThat(set.surfaceAt(hm(14))?.id).isNotEqualTo(VellumSurface.ID_DAY)
+        // Night and evening remain.
+        assertThat(set.surfaceAt(hm(23))?.id).isEqualTo(VellumSurface.ID_NIGHT)
+    }
+
+    @Test
+    fun minutesUntilEnd_atExactBoundaries_returnsFullDayNotZero() {
+        val night = VellumSurface(id = "night", startMinute = hm(22), endMinute = hm(5), accent = 0, ambientIntensity = .5f)
+        // Standing on the end instant: full day until it comes round.
+        assertThat(night.minutesUntilEnd(hm(5))).isEqualTo(VellumSurface.MINUTES_PER_DAY)
+        // Standing one minute before end.
+        assertThat(night.minutesUntilEnd(hm(4, 59))).isEqualTo(1)
+        // Standing at midnight: night ends at 05:00 -> 300 mins left.
+        assertThat(night.minutesUntilEnd(hm(0))).isEqualTo(300)
+    }
+
+    @Test
+    fun minutesUntilEnd_singleSurfaceWholeDayAlwaysReturnsFullDay() {
+        val only = VellumSurface(id = "only", startMinute = hm(0), endMinute = hm(0), accent = 0, ambientIntensity = .5f)
+        assertThat(only.minutesUntilEnd(hm(0))).isEqualTo(VellumSurface.MINUTES_PER_DAY)
+        assertThat(only.minutesUntilEnd(hm(12))).isEqualTo(VellumSurface.MINUTES_PER_DAY)
+        assertThat(only.minutesUntilEnd(hm(23, 59))).isEqualTo(VellumSurface.MINUTES_PER_DAY)
+    }
+
+    @Test
+    fun defaults_accentsAreDistinctAndInExpectedHueRanges() {
+        val defaults = VellumSurface.defaults()
+        assertThat(defaults).hasSize(4)
+        // All accents distinct.
+        assertThat(defaults.map { it.accent }.toSet()).hasSize(4)
+        // Day is the low-intensity one, night the highest — per spec.
+        val byId = defaults.associateBy { it.id }
+        assertThat(byId[VellumSurface.ID_DAY]!!.ambientIntensity).isLessThan(byId[VellumSurface.ID_NIGHT]!!.ambientIntensity)
+        assertThat(byId[VellumSurface.ID_MORNING]!!.ambientIntensity).isGreaterThan(byId[VellumSurface.ID_DAY]!!.ambientIntensity)
+    }
+
+    @Test
+    fun withStart_midnightBoundaryHoldsTilingAfterMultipleMoves() {
+        var set = VellumSurfaceSet()
+        // Move boundaries that straddle midnight repeatedly.
+        set = set.withStart(VellumSurface.ID_MORNING, hm(4, 30))
+        set = set.withEnd(VellumSurface.ID_NIGHT, hm(4, 30))
+        set = set.withEnd(VellumSurface.ID_EVENING, hm(23, 15))
+        set = set.withStart(VellumSurface.ID_DAY, hm(10, 45))
+        for (minute in 0 until VellumSurface.MINUTES_PER_DAY) {
+            assertThat(set.surfaces.filter { it.contains(minute) }).hasSize(1)
+        }
+    }
 }

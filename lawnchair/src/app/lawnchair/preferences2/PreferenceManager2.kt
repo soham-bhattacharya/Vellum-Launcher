@@ -53,6 +53,7 @@ import app.lawnchair.ui.popup.toOptionOrderString
 import app.lawnchair.ui.preferences.components.HiddenAppsInSearch
 import app.lawnchair.ui.preferences.data.liveinfo.LiveInformationManager
 import app.lawnchair.util.kotlinxJson
+import app.lawnchair.vellum.preset.VellumLook
 import app.lawnchair.vellum.surface.VellumSurfaceSet
 import app.lawnchair.views.overlay.FullScreenOverlayMode
 import com.android.launcher3.BuildConfig
@@ -321,6 +322,18 @@ class PreferenceManager2 @Inject constructor(
     val vellumSurfacesEnabled = preference(
         key = booleanPreferencesKey(name = "vellum_surfaces_enabled"),
         defaultValue = context.resources.getBoolean(R.bool.config_default_vellum_surfaces_enabled),
+    )
+
+    /**
+     * The look last applied from the gallery, used only to mark it as in use.
+     *
+     * This is not the source of truth for anything the home screen draws: editing a surface by hand
+     * leaves this pointing at the look the edits started from, which is the honest answer to
+     * "which one did I pick", and stops the gallery from fighting the editor over the same state.
+     */
+    val vellumLookId = preference(
+        key = stringPreferencesKey(name = "vellum_look_id"),
+        defaultValue = VellumLook.Default.id,
     )
 
     val vellumSurfaceSet = serializablePreference(

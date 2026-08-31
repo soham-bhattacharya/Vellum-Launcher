@@ -71,6 +71,49 @@
         <item quantity="other">%1$d apps</item>
     </plurals>
 
+    <!-- Vellum background designs -->
+    <string name="vellum_backdrop_heading">Background design</string>
+    <string name="vellum_backdrop_bloom">Bloom</string>
+    <string name="vellum_backdrop_bloom_description">A single warm source, with orbits and motes around it</string>
+    <string name="vellum_backdrop_aurora">Aurora</string>
+    <string name="vellum_backdrop_aurora_description">Ribbons of light sweeping across the top of the screen</string>
+    <string name="vellum_backdrop_dunes">Dunes</string>
+    <string name="vellum_backdrop_dunes_description">Layered horizons receding into haze</string>
+    <string name="vellum_backdrop_mesh">Mesh</string>
+    <string name="vellum_backdrop_mesh_description">Overlapping fields of colour that blend into each other</string>
+    <string name="vellum_backdrop_nocturne">Nocturne</string>
+    <string name="vellum_backdrop_nocturne_description">Near darkness, a low horizon glow, and stars</string>
+    <string name="vellum_backdrop_grain">Grain</string>
+    <string name="vellum_backdrop_grain_description">Flat pigment on textured stock</string>
+    <string name="vellum_backdrop_veil">Veil</string>
+    <string name="vellum_backdrop_veil_description">Almost nothing. One soft source in the corner.</string>
+
+    <!-- Vellum looks -->
+    <string name="vellum_looks_label">Looks</string>
+    <string name="vellum_looks_description">Complete designs you can try in one tap</string>
+    <string name="vellum_looks_heading">Gallery</string>
+    <string name="vellum_looks_explainer">A look sets the colours, the background design, and the atmosphere for every part of the day. Your icons never move.</string>
+    <string name="vellum_look_bloom">Bloom</string>
+    <string name="vellum_look_bloom_tagline">Warm sunrise into a violet evening</string>
+    <string name="vellum_look_aurora">Aurora</string>
+    <string name="vellum_look_aurora_tagline">Cold northern light, teal and deep sea</string>
+    <string name="vellum_look_dunes">Dunes</string>
+    <string name="vellum_look_dunes_tagline">Warm earth and layered horizons</string>
+    <string name="vellum_look_nocturne">Nocturne</string>
+    <string name="vellum_look_nocturne_tagline">Almost no light at all</string>
+    <string name="vellum_look_paper">Paper</string>
+    <string name="vellum_look_paper_tagline">Muted pigment on textured stock</string>
+    <string name="vellum_look_signal">Signal</string>
+    <string name="vellum_look_signal_tagline">Loud on purpose, in overlapping colour</string>
+    <string name="vellum_look_apply">Apply this look</string>
+    <string name="vellum_look_apply_with_apps">Apply and suggest apps</string>
+    <string name="vellum_look_apply_apps_confirm">This replaces the colours, background designs, and times of every surface, and fills each one with apps picked for that time of day. Anything you pinned to a surface yourself is replaced. Your home screen icons never move.</string>
+    <string name="vellum_look_applied">%1$s applied</string>
+    <string name="vellum_look_applied_with_apps">%1$s applied, with suggested apps</string>
+    <string name="vellum_look_current">In use</string>
+    <string name="vellum_look_preview_accessibility">Preview of the %1$s look</string>
+    <string name="vellum_looks_no_apps_found">Vellum could not find apps to suggest on this device. The colours and designs were still applied.</string>
+
     <string name="action_create">Create</string>
     <string name="action_backup">Backup</string>
     <string name="action_restore">Restore</string>

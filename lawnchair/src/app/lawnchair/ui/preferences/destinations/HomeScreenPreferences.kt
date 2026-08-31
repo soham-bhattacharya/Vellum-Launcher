@@ -46,6 +46,7 @@ import app.lawnchair.ui.preferences.components.layout.ExpandAndShrink
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.HomeScreenGrid
+import app.lawnchair.ui.preferences.navigation.VellumLooks
 import app.lawnchair.ui.preferences.navigation.VellumSurfaces
 import app.lawnchair.util.collectAsStateBlocking
 import com.android.launcher3.LauncherAppState
@@ -134,6 +135,11 @@ fun HomeScreenPreferences(
             )
         }
         PreferenceGroup(heading = stringResource(id = R.string.vellum_label)) {
+            NavigationActionPreference(
+                label = stringResource(id = R.string.vellum_looks_label),
+                destination = VellumLooks,
+                subtitle = stringResource(id = R.string.vellum_looks_description),
+            )
             val ambientEnabledAdapter = prefs2.vellumAmbientEnabled.getAdapter()
             SwitchPreference(
                 adapter = ambientEnabledAdapter,

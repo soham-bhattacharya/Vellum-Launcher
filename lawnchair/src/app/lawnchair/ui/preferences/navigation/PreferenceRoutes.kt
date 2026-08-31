@@ -153,6 +153,11 @@ data object VellumSurfaces : PreferenceRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object VellumLooks : PreferenceRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/vellum-looks"
+}
+
+@Serializable
 data class VellumSurfaceEditor(val surfaceId: String) : PreferenceRoute
 
 @Serializable

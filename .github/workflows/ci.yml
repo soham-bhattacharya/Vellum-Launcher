@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - '*-dev'
+      - 'feat/*'
+      - 'feat/**'
+      - 'main'
+      - 'master'
     paths-ignore:
       - '.idea/**'
       - '.gitattributes'
@@ -47,7 +51,7 @@ jobs:
         with:
           cache-encryption-key: Da25KUVSE5jbGds2zXmfXw==
       - name: Write sign info
-        if: github.repository_owner == 'LawnchairLauncher'
+        if: github.repository_owner == 'LawnchairLauncher' || github.repository_owner == 'soham-bhattacharya'
         run: |
           if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
             echo storePassword='${{ secrets.KEYSTORE_PASSWORD }}' >> keystore.properties
@@ -77,9 +81,29 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew spotlessCheck
 
+  vellum-unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Run Vellum JVM unit tests
+        run: ./gradlew testLawnWithQuickstepGithubDebugUnitTest --rerun-tasks
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vellum-unit-test-results
+          path: build/test-results/**/*.xml
+
   send-notifications:
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'LawnchairLauncher'
+    if: github.repository_owner == 'LawnchairLauncher' || github.repository_owner == 'soham-bhattacharya'
     needs: build-debug-apk
     steps:
       - uses: actions/checkout@v7
@@ -127,6 +151,7 @@ jobs:
     needs:
       - build-debug-apk
       - check-style
+      - vellum-unit-tests
     runs-on: ubuntu-slim
     if: always()
     outputs:
@@ -146,7 +171,7 @@ jobs:
   nightly-release:
     runs-on: ubuntu-latest
     needs: final-status
-    if: needs.final-status.outputs.publish_nightly == 'true' && github.repository_owner == 'LawnchairLauncher' && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/') && endsWith(github.ref, '-dev')
+    if: needs.final-status.outputs.publish_nightly == 'true' && (github.repository_owner == 'LawnchairLauncher' || github.repository_owner == 'soham-bhattacharya') && github.event_name == 'push' && startsWith(github.ref, 'refs/heads/') && endsWith(github.ref, '-dev')
     permissions:
       contents: write
     steps:

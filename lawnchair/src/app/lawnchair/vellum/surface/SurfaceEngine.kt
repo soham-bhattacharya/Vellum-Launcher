@@ -102,6 +102,7 @@ class SurfaceEngine(
         started = false
         handler.removeCallbacks(boundaryRunnable)
         runCatching { context.unregisterReceiver(clockChangeReceiver) }
+        manualOverrideId = null
     }
 
     /** Called when the launcher resumes, to catch boundaries crossed while the device slept. */

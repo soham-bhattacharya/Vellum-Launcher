@@ -18,6 +18,8 @@ package app.lawnchair.vellum.surface
 
 import android.content.Context
 import app.lawnchair.util.ComponentKeySerializer
+import app.lawnchair.vellum.backdrop.BackdropPalette
+import app.lawnchair.vellum.backdrop.BackdropStyle
 import com.android.launcher3.R
 import com.android.launcher3.util.ComponentKey
 import kotlinx.serialization.Serializable
@@ -42,6 +44,17 @@ data class VellumSurface(
     val accent: Int,
     /** Ambient strength for this surface, 0..1. */
     val ambientIntensity: Float,
+    /**
+     * Companion hue for backdrops that blend between two colours. Null means "derive one from
+     * [accent]", which is what a surface the user coloured by hand will normally want.
+     */
+    val accentSecondary: Int? = null,
+    /**
+     * Which background design this surface paints. Stored as the [BackdropStyle] id rather than the
+     * enum so that an unrecognised value degrades to the default instead of failing to deserialise
+     * the whole set.
+     */
+    val backdropId: String = BackdropStyle.Default.id,
     val apps: List<
         @Serializable(ComponentKeySerializer::class)
         ComponentKey,
@@ -53,6 +66,12 @@ data class VellumSurface(
 
     fun label(context: Context): String = customLabel ?: context.getString(labelRes(id))
 
+    /** The background design this surface paints, falling back when [backdropId] is unrecognised. */
+    val backdrop: BackdropStyle get() = BackdropStyle.fromId(backdropId)
+
+    /** The colours this surface hands to its backdrop. */
+    fun palette(): BackdropPalette = BackdropPalette.of(accent, accentSecondary)
+
     /** True when [minuteOfDay] falls inside this surface's window, handling midnight wrap. */
     fun contains(minuteOfDay: Int): Boolean = when {
         startMinute == endMinute -> true
@@ -62,6 +81,7 @@ data class VellumSurface(
 
     /** Minutes from [minuteOfDay] until this surface ends. Always in 1..1440. */
     fun minutesUntilEnd(minuteOfDay: Int): Int {
+        if (startMinute == endMinute) return MINUTES_PER_DAY
         val delta = (endMinute - minuteOfDay + MINUTES_PER_DAY) % MINUTES_PER_DAY
         return if (delta == 0) MINUTES_PER_DAY else delta
     }
@@ -87,6 +107,11 @@ data class VellumSurface(
          * The shipped set. Colours climb from a warm sunrise through daylight into a violet
          * evening and a deep, low-luminance night, so the ambient layer reads as the time of day
          * rather than as decoration.
+         *
+         * This is deliberately a copy of the Bloom look rather than a call into it: making the
+         * default surface set depend on the preset catalogue would put a class-initialisation cycle
+         * between the model and the presets that build on it. `VellumLookTest` asserts the two stay
+         * identical, so the duplication cannot drift unnoticed.
          */
         fun defaults(): List<VellumSurface> = listOf(
             VellumSurface(
@@ -95,6 +120,8 @@ data class VellumSurface(
                 endMinute = hm(11),
                 accent = 0xFFF2A65A.toInt(),
                 ambientIntensity = .55f,
+                accentSecondary = 0xFFF6C89A.toInt(),
+                backdropId = BackdropStyle.BLOOM.id,
             ),
             VellumSurface(
                 id = ID_DAY,
@@ -102,6 +129,8 @@ data class VellumSurface(
                 endMinute = hm(17),
                 accent = 0xFF5AA9F2.toInt(),
                 ambientIntensity = .40f,
+                accentSecondary = 0xFF8FD3F4.toInt(),
+                backdropId = BackdropStyle.BLOOM.id,
             ),
             VellumSurface(
                 id = ID_EVENING,
@@ -109,6 +138,8 @@ data class VellumSurface(
                 endMinute = hm(22),
                 accent = 0xFF8C69FF.toInt(),
                 ambientIntensity = .70f,
+                accentSecondary = 0xFFC77DFF.toInt(),
+                backdropId = BackdropStyle.BLOOM.id,
             ),
             VellumSurface(
                 id = ID_NIGHT,
@@ -116,6 +147,8 @@ data class VellumSurface(
                 endMinute = hm(5),
                 accent = 0xFF3B4A8C.toInt(),
                 ambientIntensity = .85f,
+                accentSecondary = 0xFF5C6BC0.toInt(),
+                backdropId = BackdropStyle.NOCTURNE.id,
             ),
         )
     }

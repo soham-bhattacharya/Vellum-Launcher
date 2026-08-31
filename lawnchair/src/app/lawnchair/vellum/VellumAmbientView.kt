@@ -20,34 +20,33 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
-import android.graphics.Paint
-import android.graphics.RadialGradient
-import android.graphics.RectF
-import android.graphics.Shader
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.FrameLayout
 import androidx.core.animation.addListener
-import androidx.core.graphics.ColorUtils
 import androidx.core.view.updateLayoutParams
 import app.lawnchair.theme.ThemeProvider
+import app.lawnchair.vellum.backdrop.Backdrop
+import app.lawnchair.vellum.backdrop.BackdropGeometry
+import app.lawnchair.vellum.backdrop.BackdropPalette
+import app.lawnchair.vellum.backdrop.BackdropStyle
+import app.lawnchair.vellum.surface.VellumSurface
 import com.android.launcher3.Workspace
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
- * Vellum's signature light field, drawn behind every interactive home element.
+ * Vellum's ambient canvas, drawn behind every interactive home element.
  *
  * The important property of this view is that **workspace scrolling never repaints it**.
  * The content is split into two children: a wash that never moves, and a field that carries the
- * halo, orbit lines and particles. Paging only assigns `translationX`/`translationY` to the field,
- * which the GPU composites without re-rasterising anything. The field is promoted to a hardware
- * layer for the duration of a scroll and released once the workspace settles, so a page swipe
- * costs one texture blit per frame instead of a full-screen gradient blend.
+ * subject of whichever [BackdropStyle] is active. Paging only assigns `translationX`/`translationY`
+ * to the field, which the GPU composites without re-rasterising anything. The field is promoted to
+ * a hardware layer for the duration of a scroll and released once the workspace settles, so a page
+ * swipe costs one texture blit per frame instead of a full-screen gradient blend.
  *
  * There is no timer and no background work anywhere in this class.
  */
@@ -57,9 +56,8 @@ class VellumAmbientView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs),
     ViewTreeObserver.OnScrollChangedListener {
 
-    private val palette = Palette(context)
-    private val washLayer = WashLayer(context, palette)
-    private val fieldLayer = FieldLayer(context, palette)
+    private val washLayer = BackdropLayer(context, isField = false)
+    private val fieldLayer = BackdropLayer(context, isField = true)
 
     private var workspace: Workspace<*>? = null
     private var pagePhase = 0f
@@ -76,6 +74,9 @@ class VellumAmbientView @JvmOverloads constructor(
     /** Ambient strength contributed by the active context surface, 0..1. */
     private var surfaceIntensity = 1f
 
+    /** The surface currently being painted, or null when no context surface is active. */
+    private var activeSurface: VellumSurface? = null
+
     /** Drives the dip-and-return used when the active surface changes. */
     private var crossfade = 1f
     private var crossfadeAnimator: ValueAnimator? = null
@@ -86,11 +87,7 @@ class VellumAmbientView @JvmOverloads constructor(
     private val themeListener = object : ThemeProvider.ColorSchemeChangeListener {
         override fun onColorSchemeChanged() {
             // ThemeProvider may notify from a background dispatcher.
-            post {
-                palette.refresh(context)
-                washLayer.onPaletteChanged()
-                fieldLayer.onPaletteChanged()
-            }
+            post { applyAppearance() }
         }
     }
 
@@ -101,6 +98,7 @@ class VellumAmbientView @JvmOverloads constructor(
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
         addView(washLayer, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
         addView(fieldLayer, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+        applyAppearance()
         applyAlpha()
     }
 
@@ -112,14 +110,32 @@ class VellumAmbientView @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         ThemeProvider.INSTANCE.get(context).removeListener(themeListener)
         removeCallbacks(releaseLayerRunnable)
+        crossfadeAnimator?.cancel()
         super.onDetachedFromWindow()
     }
 
     fun bindWorkspace(target: Workspace<*>) {
+        if (workspace === target && target.viewTreeObserver.isAlive) return
         unbindWorkspace()
         workspace = target
         if (target.viewTreeObserver.isAlive) {
             target.viewTreeObserver.addOnScrollChangedListener(this)
+        }
+        // When a grid reload swaps the Workspace instance but reuses the activity,
+        // the old ViewTreeObserver is dead and scroll events would silently stop.
+        // Attaching a layout listener as fallback ensures we reattach once the
+        // new Workspace is attached.
+        if (!target.viewTreeObserver.isAlive) {
+            target.addOnAttachStateChangeListener(
+                object : OnAttachStateChangeListener {
+                    override fun onViewAttachedToWindow(v: View) {
+                        target.removeOnAttachStateChangeListener(this)
+                        bindWorkspace(target)
+                    }
+
+                    override fun onViewDetachedFromWindow(v: View) = Unit
+                },
+            )
         }
         target.post(::updateFromWorkspace)
     }
@@ -153,8 +169,9 @@ class VellumAmbientView @JvmOverloads constructor(
      */
     private fun applyParallax() {
         if (width == 0) return
-        fieldLayer.translationX = -(pagePhase - .5f) * width * PARALLAX_X
-        fieldLayer.translationY = pagePhase * height * PARALLAX_Y
+        val scale = fieldLayer.parallaxScale
+        fieldLayer.translationX = -(pagePhase - .5f) * width * PARALLAX_X * scale
+        fieldLayer.translationY = pagePhase * height * PARALLAX_Y * scale
     }
 
     /**
@@ -195,19 +212,21 @@ class VellumAmbientView @JvmOverloads constructor(
     }
 
     /**
-     * Adopts the atmosphere of a context surface. Passing null returns to the theme accent.
+     * Adopts the atmosphere of a context surface. Passing null returns to the theme accent and the
+     * default design.
      *
-     * The change is a dip and return rather than a per-frame colour interpolation: the palette is
-     * swapped once, at the bottom of the dip, so a surface change costs exactly one repaint instead
-     * of one per frame of the transition.
+     * The change is a dip and return rather than a per-frame colour interpolation: the whole
+     * appearance is swapped once, at the bottom of the dip, so a surface change costs exactly one
+     * repaint instead of one per frame of the transition. That matters more here than it did when
+     * only a colour changed, because a backdrop switch also rebuilds every shader and path.
      */
-    fun setSurface(accent: Int?, intensity: Float, animate: Boolean = true) {
-        val newIntensity = intensity.coerceIn(0f, 1f)
-        if (palette.surfaceAccent == accent && surfaceIntensity == newIntensity) return
+    fun setSurface(surface: VellumSurface?, animate: Boolean = true) {
+        val newIntensity = surface?.ambientIntensity?.coerceIn(0f, 1f) ?: 1f
+        if (sameAppearance(activeSurface, surface) && surfaceIntensity == newIntensity) return
 
         crossfadeAnimator?.cancel()
         if (!animate || !ValueAnimator.areAnimatorsEnabled() || visibility != VISIBLE) {
-            commitSurface(accent, newIntensity)
+            commitSurface(surface, newIntensity)
             crossfade = 1f
             applyAlpha()
             return
@@ -224,7 +243,7 @@ class VellumAmbientView @JvmOverloads constructor(
                 } else {
                     if (!committed) {
                         committed = true
-                        commitSurface(accent, newIntensity)
+                        commitSurface(surface, newIntensity)
                     }
                     crossfade = (t - SURFACE_DIP_POINT) / (1f - SURFACE_DIP_POINT)
                 }
@@ -232,7 +251,7 @@ class VellumAmbientView @JvmOverloads constructor(
             }
             addListener(
                 onEnd = {
-                    if (!committed) commitSurface(accent, newIntensity)
+                    if (!committed) commitSurface(surface, newIntensity)
                     crossfade = 1f
                     applyAlpha()
                     crossfadeAnimator = null
@@ -242,12 +261,39 @@ class VellumAmbientView @JvmOverloads constructor(
         }
     }
 
-    private fun commitSurface(accent: Int?, intensity: Float) {
-        palette.surfaceAccent = accent
+    /** Whether two surfaces would paint identically, ignoring anything the canvas does not use. */
+    private fun sameAppearance(a: VellumSurface?, b: VellumSurface?): Boolean = when {
+        a == null || b == null -> a == null && b == null
+
+        else ->
+            a.accent == b.accent &&
+                a.accentSecondary == b.accentSecondary &&
+                a.backdropId == b.backdropId
+    }
+
+    private fun commitSurface(surface: VellumSurface?, intensity: Float) {
+        activeSurface = surface
         surfaceIntensity = intensity
-        palette.refresh(context)
-        washLayer.onPaletteChanged()
-        fieldLayer.onPaletteChanged()
+        applyAppearance()
+    }
+
+    /** Pushes the current style and palette into both layers, rebuilding their shaders once. */
+    private fun applyAppearance() {
+        val surface = activeSurface
+        val style = surface?.backdrop ?: BackdropStyle.Default
+        val palette = surface?.palette() ?: BackdropPalette.of(themeAccent(), null)
+        washLayer.setAppearance(style, palette)
+        fieldLayer.setAppearance(style, palette)
+        applyParallax()
+    }
+
+    private fun themeAccent(): Int {
+        val typedValue = TypedValue()
+        return if (context.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)) {
+            typedValue.data
+        } else {
+            FALLBACK_ACCENT
+        }
     }
 
     private fun applyAlpha() {
@@ -270,11 +316,15 @@ class VellumAmbientView @JvmOverloads constructor(
     /**
      * The field is oversized by exactly the parallax range and offset by negative margins, so that
      * translating it can never expose an empty edge.
+     *
+     * The range is computed from the largest parallax scale any design asks for, not from the
+     * current one, so that switching to a design that drifts further never has to relayout.
      */
     private fun resizeFieldLayer(w: Int, h: Int) {
         if (w <= 0 || h <= 0) return
-        val overscanX = (w * PARALLAX_X * .5f).roundToInt() + 1
-        val overscanY = (h * PARALLAX_Y).roundToInt() + 1
+        val maxScale = BackdropStyle.maxParallaxScale
+        val overscanX = (w * PARALLAX_X * maxScale * .5f).roundToInt() + 1
+        val overscanY = (h * PARALLAX_Y * maxScale).roundToInt() + 1
         fieldLayer.setOverscan(overscanX.toFloat(), overscanY.toFloat())
         fieldLayer.updateLayoutParams<LayoutParams> {
             width = w + overscanX * 2
@@ -284,168 +334,69 @@ class VellumAmbientView @JvmOverloads constructor(
         }
     }
 
-    /** Accent colours, resolved once per theme or surface change rather than once per process. */
-    private class Palette(context: Context) {
-        var accent: Int = 0
-            private set
-        var soft: Int = 0
-            private set
-        var deep: Int = 0
-            private set
+    /**
+     * One half of a backdrop.
+     *
+     * The two halves hold separate [Backdrop] instances of the same style because a backdrop caches
+     * shaders sized to the view it draws into, and the field is deliberately larger than the wash.
+     */
+    private class BackdropLayer(context: Context, private val isField: Boolean) : View(context) {
 
-        /** When a context surface is active, its accent replaces the theme accent. */
-        var surfaceAccent: Int? = null
-
-        init {
-            refresh(context)
-        }
-
-        fun refresh(context: Context) {
-            val typedValue = android.util.TypedValue()
-            accent = surfaceAccent ?: if (context.theme.resolveAttribute(android.R.attr.colorAccent, typedValue, true)) {
-                typedValue.data
-            } else {
-                FALLBACK_ACCENT
-            }
-            soft = ColorUtils.blendARGB(accent, Color.WHITE, .24f)
-            deep = ColorUtils.blendARGB(accent, Color.rgb(66, 45, 120), .46f)
-        }
-    }
-
-    /** Static full-screen wash. Never moves, never invalidated by scrolling. */
-    private class WashLayer(context: Context, private val palette: Palette) : View(context) {
-
-        private val density = resources.displayMetrics.density
-        private val washPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG)
-        private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeCap = Paint.Cap.ROUND
-        }
-
-        init {
-            importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
-        }
-
-        fun onPaletteChanged() {
-            rebuildShader()
-            invalidate()
-        }
-
-        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-            super.onSizeChanged(w, h, oldw, oldh)
-            rebuildShader()
-        }
-
-        private fun rebuildShader() {
-            if (width <= 0 || height <= 0) return
-            washPaint.shader = LinearGradient(
-                0f,
-                height.toFloat(),
-                width.toFloat(),
-                0f,
-                intArrayOf(
-                    ColorUtils.setAlphaComponent(palette.deep, 15),
-                    Color.TRANSPARENT,
-                    ColorUtils.setAlphaComponent(palette.soft, 10),
-                ),
-                floatArrayOf(0f, .54f, 1f),
-                Shader.TileMode.CLAMP,
-            )
-        }
-
-        override fun onDraw(canvas: Canvas) {
-            if (width == 0 || height == 0) return
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), washPaint)
-
-            linePaint.color = ColorUtils.setAlphaComponent(palette.accent, 24)
-            linePaint.strokeWidth = .75f * density
-            canvas.drawLine(16f * density, height * .24f, 16f * density, height * .68f, linePaint)
-        }
-    }
-
-    /** Halo, orbit lines and particles. Translated during paging; drawn only when the size or theme changes. */
-    private class FieldLayer(context: Context, private val palette: Palette) : View(context) {
-
-        private val density = resources.displayMetrics.density
-        private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.DITHER_FLAG)
-        private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeCap = Paint.Cap.ROUND
-        }
-        private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val orbitBounds = RectF()
+        private var backdrop: Backdrop = BackdropStyle.Default.create()
+        private var style: BackdropStyle = BackdropStyle.Default
+        private var palette: BackdropPalette = BackdropPalette.Fallback
 
         private var overscanX = 0f
         private var overscanY = 0f
 
+        val parallaxScale: Float get() = style.parallaxScale
+
         init {
             importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+
+        fun setAppearance(style: BackdropStyle, palette: BackdropPalette) {
+            val styleChanged = style != this.style
+            if (!styleChanged && palette == this.palette) return
+            this.style = style
+            this.palette = palette
+            if (styleChanged) backdrop = style.create()
+            reconfigure()
+            invalidate()
         }
 
         fun setOverscan(x: Float, y: Float) {
             if (overscanX == x && overscanY == y) return
             overscanX = x
             overscanY = y
-            rebuildShader()
+            reconfigure()
             invalidate()
         }
-
-        fun onPaletteChanged() {
-            rebuildShader()
-            invalidate()
-        }
-
-        /** Screen width, i.e. this view's width minus the overscan added on both sides. */
-        private val contentWidth get() = width - overscanX * 2
-        private val contentHeight get() = height - overscanY * 2
-
-        private fun haloCenterX() = overscanX + contentWidth * .79f
-        private fun haloCenterY() = overscanY + contentHeight * .16f
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             super.onSizeChanged(w, h, oldw, oldh)
-            rebuildShader()
+            reconfigure()
         }
 
-        private fun rebuildShader() {
+        private fun reconfigure() {
             if (width <= 0 || height <= 0) return
-            glowPaint.shader = RadialGradient(
-                haloCenterX(),
-                haloCenterY(),
-                max(contentWidth, contentHeight) * .48f,
-                intArrayOf(
-                    ColorUtils.setAlphaComponent(palette.soft, 82),
-                    ColorUtils.setAlphaComponent(palette.accent, 36),
-                    Color.TRANSPARENT,
+            backdrop.configure(
+                BackdropGeometry(
+                    layerWidth = width.toFloat(),
+                    layerHeight = height.toFloat(),
+                    contentLeft = overscanX,
+                    contentTop = overscanY,
+                    contentWidth = width - overscanX * 2f,
+                    contentHeight = height - overscanY * 2f,
+                    density = resources.displayMetrics.density,
                 ),
-                floatArrayOf(0f, .34f, 1f),
-                Shader.TileMode.CLAMP,
+                palette,
             )
         }
 
         override fun onDraw(canvas: Canvas) {
             if (width == 0 || height == 0) return
-
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), glowPaint)
-
-            val cx = haloCenterX()
-            val cy = haloCenterY()
-            linePaint.color = ColorUtils.setAlphaComponent(palette.soft, 34)
-            linePaint.strokeWidth = density
-            for (index in 0..2) {
-                val radius = (46f + index * 22f) * density
-                orbitBounds.set(cx - radius, cy - radius, cx + radius, cy + radius)
-                canvas.drawArc(orbitBounds, 205f + index * 15f, 86f - index * 9f, false, linePaint)
-            }
-
-            dotPaint.color = ColorUtils.setAlphaComponent(palette.soft, 42)
-            var index = 0
-            while (index < PARTICLE_SEEDS.size - 1) {
-                val x = overscanX + PARTICLE_SEEDS[index] * contentWidth
-                val y = overscanY + PARTICLE_SEEDS[index + 1] * contentHeight
-                canvas.drawCircle(x, y, if (index % 4 == 0) 1.15f * density else .7f * density, dotPaint)
-                index += 2
-            }
+            if (isField) backdrop.drawField(canvas) else backdrop.drawWash(canvas)
         }
     }
 
@@ -462,15 +413,9 @@ class VellumAmbientView @JvmOverloads constructor(
         /** Length of the dip-and-return played when the active context surface changes. */
         const val SURFACE_CROSSFADE_MS = 620L
 
-        /** Point in that animation at which the palette is swapped. */
+        /** Point in that animation at which the appearance is swapped. */
         const val SURFACE_DIP_POINT = .34f
 
         val FALLBACK_ACCENT = Color.rgb(137, 108, 255)
-
-        val PARTICLE_SEEDS = floatArrayOf(
-            .08f, .17f, .82f, .11f, .66f, .24f, .20f, .31f, .91f, .38f,
-            .13f, .49f, .74f, .55f, .34f, .64f, .87f, .71f, .18f, .79f,
-            .58f, .86f, .94f, .91f,
-        )
     }
 }

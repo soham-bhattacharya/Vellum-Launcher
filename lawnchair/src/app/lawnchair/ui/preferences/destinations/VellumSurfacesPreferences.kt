@@ -36,6 +36,7 @@ import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.SwitchPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
+import app.lawnchair.ui.preferences.navigation.VellumLooks
 import app.lawnchair.ui.preferences.navigation.VellumSurfaceEditor
 import app.lawnchair.vellum.surface.VellumSurface
 import app.lawnchair.vellum.surface.VellumSurfaceSet
@@ -66,6 +67,14 @@ fun VellumSurfacesPreferences(
                 adapter = enabledAdapter,
                 label = stringResource(id = R.string.vellum_surfaces_label),
                 description = stringResource(id = R.string.vellum_surfaces_description),
+            )
+        }
+
+        PreferenceGroup {
+            NavigationActionPreference(
+                label = stringResource(id = R.string.vellum_looks_label),
+                destination = VellumLooks,
+                subtitle = stringResource(id = R.string.vellum_looks_description),
             )
         }
 

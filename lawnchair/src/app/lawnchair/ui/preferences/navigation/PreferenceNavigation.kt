@@ -56,6 +56,7 @@ import app.lawnchair.ui.preferences.destinations.SelectAppsForSurface
 import app.lawnchair.ui.preferences.destinations.SelectIconPreference
 import app.lawnchair.ui.preferences.destinations.ShapePreference
 import app.lawnchair.ui.preferences.destinations.SmartspacePreferences
+import app.lawnchair.ui.preferences.destinations.VellumLooksPreferences
 import app.lawnchair.ui.preferences.destinations.VellumSurfaceEditorPreferences
 import app.lawnchair.ui.preferences.destinations.VellumSurfacesPreferences
 import com.android.launcher3.util.ComponentKey
@@ -142,6 +143,9 @@ fun PreferenceNavigation(
         composable<VellumSurfaces>(
             deepLinks = getDeepLink(VellumSurfaces),
         ) { VellumSurfacesPreferences() }
+        composable<VellumLooks>(
+            deepLinks = getDeepLink(VellumLooks),
+        ) { VellumLooksPreferences() }
         composable<VellumSurfaceEditor> { backStackEntry ->
             val route: VellumSurfaceEditor = backStackEntry.toRoute()
             VellumSurfaceEditorPreferences(surfaceId = route.surfaceId)

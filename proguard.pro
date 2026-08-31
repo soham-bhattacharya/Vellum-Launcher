@@ -23,6 +23,20 @@
 -keep,allowshrinking,allowoptimization class app.lawnchair.LawnchairLauncher { *; }
 -keep,allowshrinking,allowoptimization class app.lawnchair.compatlib.** { *; }
 
+# Vellum: surfaces are persisted as JSON via kotlinx.serialization. The DataStore
+# string is the only on-disk representation, so keep the model and its serializer
+# across R8 full-mode / minifyEnabled release builds. Without this a release build
+# can still launch but silently drops the user's surfaces on restart (empty set).
+-keep,allowshrinking,allowoptimization class app.lawnchair.vellum.surface.VellumSurface { *; }
+-keep,allowshrinking,allowoptimization class app.lawnchair.vellum.surface.VellumSurfaceSet { *; }
+-keep,allowshrinking,allowoptimization class app.lawnchair.util.ComponentKeySerializer { *; }
+-keep,allowshrinking,allowoptimization class app.lawnchair.util.IntentSerializer { *; }
+-keepclassmembers class app.lawnchair.vellum.surface.VellumSurface { *; }
+-keepclassmembers class app.lawnchair.vellum.surface.VellumSurfaceSet { *; }
+# kotlinx.serialization: keep generated serializers and the Json entries they reference.
+-keepclassmembers class kotlinx.serialization.json.** { *; }
+-keep @kotlinx.serialization.Serializable class * { *; }
+
 -keep,allowshrinking,allowoptimization class com.google.protobuf.Timestamp { *; }
 -keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 

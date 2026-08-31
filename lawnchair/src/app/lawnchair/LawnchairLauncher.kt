@@ -491,6 +491,15 @@ class LawnchairLauncher : QuickstepLauncher() {
         super.onResume()
         restartIfPending()
         refreshPredictionContainersFromModel()
+        // Rebind ambient to the current Workspace after a grid reload that reused the
+        // activity (IDP recreate path is covered by onCreate, but a stale ViewTreeObserver
+        // from the previous Workspace would silently stop delivering scroll events).
+        if (preferenceManager2.vellumAmbientEnabled.firstCached()) {
+            vellumAmbientView?.let { ambient ->
+                // bindWorkspace does unbind+rebind and is idempotent; cheap vs lost parallax.
+                ambient.bindWorkspace(workspace)
+            }
+        }
         // Catches surface boundaries that passed while the device was asleep.
         surfaceEngine?.refresh()
 
@@ -598,13 +607,7 @@ class LawnchairLauncher : QuickstepLauncher() {
         surfaceEngine = engine
         engine.start()
         engine.activeSurface
-            .onEach { surface ->
-                if (surface == null) {
-                    ambient.setSurface(accent = null, intensity = 1f)
-                } else {
-                    ambient.setSurface(surface.accent, surface.ambientIntensity)
-                }
-            }
+            .onEach { surface -> ambient.setSurface(surface) }
             .launchIn(lifecycleScope)
         halo.setOnHaloClick { SurfacePanel.show(this, engine) != null }
 

@@ -23,12 +23,20 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -45,6 +53,7 @@ import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.ui.preferences.LocalIsExpandedScreen
+import app.lawnchair.ui.preferences.components.BackdropPreview
 import app.lawnchair.ui.preferences.components.NavigationActionPreference
 import app.lawnchair.ui.preferences.components.controls.ClickablePreference
 import app.lawnchair.ui.preferences.components.controls.SliderPreference
@@ -53,6 +62,8 @@ import app.lawnchair.ui.preferences.components.controls.TextPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.VellumSurfaceApps
+import app.lawnchair.vellum.backdrop.BackdropPalette
+import app.lawnchair.vellum.backdrop.BackdropStyle
 import app.lawnchair.vellum.surface.VellumSurface
 import app.lawnchair.vellum.surface.formatMinuteOfDay
 import com.android.launcher3.R
@@ -113,6 +124,18 @@ fun VellumSurfaceEditorPreferences(
         backArrowVisible = !LocalIsExpandedScreen.current,
         modifier = modifier,
     ) {
+        // A live preview at the top, so a colour or design change is judged immediately instead of
+        // by leaving settings, waiting for the right time of day, and coming back.
+        BackdropPreview(
+            style = surface.backdrop,
+            palette = surface.palette(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(22.dp)),
+        )
+
         PreferenceGroup {
             SwitchPreference(
                 checked = surface.enabled,
@@ -152,10 +175,25 @@ fun VellumSurfaceEditorPreferences(
             )
         }
 
-        PreferenceGroup(heading = stringResource(id = R.string.vellum_surface_atmosphere_heading)) {
+        PreferenceGroup(heading = stringResource(id = R.string.vellum_backdrop_heading)) {
+            BackdropRow(
+                selected = surface.backdrop,
+                accent = surface.accent,
+                secondary = surface.accentSecondary,
+                onSelect = { style -> update { it.copy(backdropId = style.id) } },
+            )
+        }
+
+        PreferenceGroup(
+            heading = stringResource(id = R.string.vellum_surface_atmosphere_heading),
+            description = stringResource(id = surface.backdrop.descriptionRes),
+        ) {
             SwatchRow(
                 selected = surface.accent,
-                onSelect = { accent -> update { it.copy(accent = accent) } },
+                // Choosing a new accent drops any companion hue the surface inherited from a look:
+                // keeping a paired colour from a different palette is how a curated design turns
+                // into an accident.
+                onSelect = { accent -> update { it.copy(accent = accent, accentSecondary = null) } },
             )
             SliderPreference(
                 label = stringResource(id = R.string.vellum_ambient_intensity_label),
@@ -178,6 +216,64 @@ fun VellumSurfaceEditorPreferences(
                     surface.apps.size,
                 ),
             )
+        }
+    }
+}
+
+/** The catalogue of background designs, each rendered with this surface's own colours. */
+@Composable
+private fun BackdropRow(
+    selected: BackdropStyle,
+    accent: Int,
+    secondary: Int?,
+    onSelect: (BackdropStyle) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = remember(accent, secondary) { BackdropPalette.of(accent, secondary) }
+    LazyRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainer),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(BackdropStyle.entries, key = { it.id }) { style ->
+            val isSelected = style == selected
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(86.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable { onSelect(style) },
+            ) {
+                BackdropPreview(
+                    style = style,
+                    palette = palette,
+                    showChrome = false,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(124.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .then(
+                            if (isSelected) {
+                                Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
+                            } else {
+                                Modifier
+                            },
+                        ),
+                )
+                Text(
+                    text = stringResource(id = style.labelRes),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    maxLines = 1,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
         }
     }
 }
