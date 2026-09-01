@@ -94,6 +94,10 @@ fun VellumIconPacksPreferences(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 CuratedIconPack.all().forEach { pack ->
+                    val appliedMessage = stringResource(
+                        R.string.vellum_pack_applied,
+                        stringResource(pack.nameRes),
+                    )
                     CuratedPackCard(
                         pack = pack,
                         currentPackage = currentPackage,
@@ -101,10 +105,7 @@ fun VellumIconPacksPreferences(
                             iconPackAdapter.onChange(packageName)
                             Toast.makeText(
                                 context,
-                                context.getString(
-                                    R.string.vellum_pack_applied,
-                                    context.getString(pack.nameRes),
-                                ),
+                                appliedMessage,
                                 Toast.LENGTH_SHORT,
                             ).show()
                         },

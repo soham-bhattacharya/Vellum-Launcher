@@ -7,13 +7,13 @@ body:
     attributes:
       value: |
         > [!IMPORTANT]
-        > Lawnchair's issue tracker is maintained on a best-effort basis.
+        > Vellum's issue tracker is maintained on a best-effort basis.
         > Due to limited resources, we do not guarantee that all issues will be triaged or checked by the developers.
 
         Thanks for taking the time to file this issue! Here are a few things to do before submitting:
-        1. Use the [**latest nightly version**](https://github.com/LawnchairLauncher/lawnchair#development-builds) when reporting bugs.
-        2. [**Read our documentation**](https://docs.lawnchair.app/) for common issues; if it is, please don't create an issue about it.
-        3. Search **both [open and closed issues](https://github.com/LawnchairLauncher/lawnchair/issues?q=is%3Aissue+sort%3Aupdated-desc+)** for your bug.
+        1. Use the [**latest Vellum release**](https://github.com/soham-bhattacharya/Vellum-Launcher/releases) when reporting bugs.
+        2. [**Read the project documentation**](https://github.com/soham-bhattacharya/Vellum-Launcher#readme) for current limitations.
+        3. Search **both [open and closed issues](https://github.com/soham-bhattacharya/Vellum-Launcher/issues?q=is%3Aissue+sort%3Aupdated-desc+)** for your bug.
 
   - type: textarea
     id: bug-description

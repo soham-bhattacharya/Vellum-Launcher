@@ -61,7 +61,6 @@ import app.lawnchair.preferences.preferenceManager
 import app.lawnchair.preferences2.firstCached
 import app.lawnchair.preferences2.preferenceManager2
 import app.lawnchair.ui.OverflowMenuGrouped
-import app.lawnchair.ui.preferences.components.AnnouncementPreference
 import app.lawnchair.ui.preferences.components.controls.PreferenceCategory
 import app.lawnchair.ui.preferences.components.controls.WarningPreference
 import app.lawnchair.ui.preferences.components.layout.ClickableIcon
@@ -70,7 +69,6 @@ import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.components.layout.PreferenceTemplate
 import app.lawnchair.ui.preferences.components.layout.ProvideDescriptionTextStyle
-import app.lawnchair.ui.preferences.data.liveinfo.SyncLiveInformation
 import app.lawnchair.ui.preferences.navigation.About
 import app.lawnchair.ui.preferences.navigation.AppDrawer
 import app.lawnchair.ui.preferences.navigation.BackupAndRestore
@@ -85,6 +83,7 @@ import app.lawnchair.ui.preferences.navigation.PreferenceRootRoute
 import app.lawnchair.ui.preferences.navigation.Quickstep
 import app.lawnchair.ui.preferences.navigation.Search
 import app.lawnchair.ui.preferences.navigation.Smartspace
+import app.lawnchair.ui.preferences.navigation.VellumStudio
 import app.lawnchair.ui.util.addIf
 import app.lawnchair.util.isDefaultLauncher
 import app.lawnchair.util.restartLauncher
@@ -100,14 +99,14 @@ fun PreferencesDashboard(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    SyncLiveInformation()
     val prefs = preferenceManager()
     val prefs2 = preferenceManager2()
+    val appName = stringResource(R.string.derived_app_name)
 
     val aboutDescrption = if (prefs.hideVersionInfo.get()) {
         prefs.pseudonymVersion.get()
     } else {
-        "${context.getString(R.string.derived_app_name)} ${BuildConfig.MAJOR_VERSION}"
+        "$appName ${BuildConfig.MAJOR_VERSION}"
     }
 
     PreferenceLayout(
@@ -117,8 +116,6 @@ fun PreferencesDashboard(
         backArrowVisible = false,
         actions = { PreferencesOverflowMenu(currentRoute = currentRoute, onNavigate = onNavigate) },
     ) {
-        AnnouncementPreference()
-
         if (BuildConfig.APPLICATION_ID.contains("nightly") || BuildConfig.DEBUG) {
             PreferencesDebugWarning()
             Spacer(modifier = Modifier.height(8.dp))
@@ -131,6 +128,14 @@ fun PreferencesDashboard(
 
         val deckLayout = prefs2.deckLayout.getAdapter()
         PreferenceGroup {
+            PreferenceCategory(
+                label = stringResource(R.string.vellum_studio_label),
+                description = stringResource(R.string.vellum_studio_description),
+                iconResource = R.drawable.ic_vellum_settings,
+                onNavigate = { onNavigate(VellumStudio) },
+                isSelected = currentRoute is VellumStudio,
+            )
+
             PreferenceCategory(
                 label = stringResource(R.string.general_label),
                 description = stringResource(R.string.general_description),

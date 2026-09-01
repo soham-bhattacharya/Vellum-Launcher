@@ -333,7 +333,6 @@ class PreferenceManager2 @Inject constructor(
     val vellumColumnDrawer = preference(
         key = booleanPreferencesKey(name = "vellum_column_drawer"),
         defaultValue = context.resources.getBoolean(R.bool.config_default_vellum_column_drawer),
-        onSet = { reloadHelper.reloadGrid() },
     )
 
     /**
@@ -960,8 +959,19 @@ class PreferenceManager2 @Inject constructor(
     )
 
     init {
+        var columnDrawerEnabled = vellumColumnDrawer.firstCached(this)
         preferencesDataStore.data
-            .onEach { cachedPreferences = it }
+            .onEach {
+                // Update the shared snapshot before rebuilding the grid. The old onSet callback
+                // ran before DataStore emitted, so DeviceProfileOverrides and the new All Apps
+                // adapter both read the previous value and column mode appeared to do nothing.
+                cachedPreferences = it
+                val newColumnDrawerEnabled = vellumColumnDrawer.firstCached(this)
+                if (newColumnDrawerEnabled != columnDrawerEnabled) {
+                    columnDrawerEnabled = newColumnDrawerEnabled
+                    reloadHelper.reloadGrid()
+                }
+            }
             .launchIn(scope)
 
         initializeIconShape(iconShape.firstCached(this))

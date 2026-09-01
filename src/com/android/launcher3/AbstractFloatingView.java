@@ -79,6 +79,7 @@ public abstract class AbstractFloatingView extends LinearLayout implements Touch
             TYPE_PIN_IME_POPUP,
             TYPE_ONE_GRID_MIGRATION_EDU,
             TYPE_NUDGE,
+            TYPE_VELLUM_SURFACE_PANEL,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface FloatingViewType {}

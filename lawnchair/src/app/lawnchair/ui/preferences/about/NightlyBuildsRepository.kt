@@ -155,7 +155,7 @@ class NightlyBuildsRepository(
             val branch = "$majorVersion-dev"
 
             // Get the latest commits (last 100)
-            val commits = api.getRepositoryCommits("LawnchairLauncher", "lawnchair", branch)
+            val commits = api.getRepositoryCommits("soham-bhattacharya", "Vellum-Launcher", branch)
 
             // Find the index of current commit
             val currentIndex = commits.indexOfFirst { it.sha.startsWith(currentCommitHash) }
@@ -177,7 +177,7 @@ class NightlyBuildsRepository(
         return try {
             val cacheDir = applicationContext.cacheDir
             val apkDirPath = cacheDir.toPath().resolve("updates").createDirectories()
-            val apkFilePath = apkDirPath.resolve("Lawnchair-update.apk").apply { deleteIfExists() }
+            val apkFilePath = apkDirPath.resolve("Vellum-update.apk").apply { deleteIfExists() }
 
             val responseBody = api.downloadFile(url)
             val totalBytes = responseBody.contentLength().toFloat()

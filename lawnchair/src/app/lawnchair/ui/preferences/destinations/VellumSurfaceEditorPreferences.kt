@@ -20,7 +20,6 @@ import android.app.TimePickerDialog
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +32,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -47,7 +48,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.PreferenceAdapter
 import app.lawnchair.preferences.getAdapter
@@ -62,6 +67,7 @@ import app.lawnchair.ui.preferences.components.controls.TextPreference
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
 import app.lawnchair.ui.preferences.navigation.VellumSurfaceApps
+import app.lawnchair.ui.preferences.navigation.VellumSurfaceColor
 import app.lawnchair.vellum.backdrop.BackdropPalette
 import app.lawnchair.vellum.backdrop.BackdropStyle
 import app.lawnchair.vellum.surface.VellumSurface
@@ -186,7 +192,10 @@ fun VellumSurfaceEditorPreferences(
 
         PreferenceGroup(
             heading = stringResource(id = R.string.vellum_surface_atmosphere_heading),
-            description = stringResource(id = surface.backdrop.descriptionRes),
+            description = stringResource(
+                id = R.string.vellum_surface_palette_description,
+                stringResource(id = surface.backdrop.descriptionRes),
+            ),
         ) {
             SwatchRow(
                 selected = surface.accent,
@@ -194,6 +203,31 @@ fun VellumSurfaceEditorPreferences(
                 // keeping a paired colour from a different palette is how a curated design turns
                 // into an accident.
                 onSelect = { accent -> update { it.copy(accent = accent, accentSecondary = null) } },
+            )
+            NavigationActionPreference(
+                label = stringResource(id = R.string.vellum_surface_primary_colour),
+                destination = VellumSurfaceColor(surfaceId = surfaceId),
+                subtitle = stringResource(
+                    id = R.string.vellum_surface_colour_value,
+                    surface.accent.toRgbHex(),
+                    stringResource(id = R.string.vellum_surface_colour_custom_subtitle),
+                ),
+                endWidget = { PaletteDot(surface.accent) },
+            )
+            NavigationActionPreference(
+                label = stringResource(id = R.string.vellum_surface_companion_colour),
+                destination = VellumSurfaceColor(surfaceId = surfaceId, companion = true),
+                subtitle = surface.accentSecondary?.let { companion ->
+                    stringResource(
+                        id = R.string.vellum_surface_colour_value,
+                        companion.toRgbHex(),
+                        stringResource(id = R.string.vellum_surface_colour_custom_subtitle),
+                    )
+                } ?: stringResource(
+                    id = R.string.vellum_surface_colour_automatic,
+                    surface.palette().secondary.toRgbHex(),
+                ),
+                endWidget = { PaletteDot(surface.palette().secondary) },
             )
             SliderPreference(
                 label = stringResource(id = R.string.vellum_ambient_intensity_label),
@@ -210,7 +244,7 @@ fun VellumSurfaceEditorPreferences(
             NavigationActionPreference(
                 label = stringResource(id = R.string.vellum_surface_choose_apps),
                 destination = VellumSurfaceApps(surfaceId),
-                subtitle = context.resources.getQuantityString(
+                subtitle = pluralStringResource(
                     R.plurals.vellum_surface_app_count,
                     surface.apps.size,
                     surface.apps.size,
@@ -233,18 +267,24 @@ private fun BackdropRow(
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+            .background(MaterialTheme.colorScheme.surfaceContainer)
+            .selectableGroup(),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(BackdropStyle.entries, key = { it.id }) { style ->
             val isSelected = style == selected
+            val label = stringResource(id = style.labelRes)
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .width(86.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable { onSelect(style) },
+                    .selectable(
+                        selected = isSelected,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(style) },
+                    ),
             ) {
                 BackdropPreview(
                     style = style,
@@ -263,7 +303,7 @@ private fun BackdropRow(
                         ),
                 )
                 Text(
-                    text = stringResource(id = style.labelRes),
+                    text = label,
                     style = MaterialTheme.typography.labelMedium,
                     color = if (isSelected) {
                         MaterialTheme.colorScheme.primary
@@ -288,12 +328,15 @@ private fun SwatchRow(
         modifier = modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceContainer)
+            .selectableGroup()
             .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SURFACE_SWATCHES.forEach { swatch ->
             val isSelected = swatch == selected
+            val hex = swatch.toRgbHex()
+            val description = stringResource(id = R.string.vellum_surface_swatch_accessibility, hex)
             Box(
                 Modifier
                     .size(if (isSelected) 34.dp else 28.dp)
@@ -306,11 +349,29 @@ private fun SwatchRow(
                             Modifier
                         },
                     )
-                    .clickable { onSelect(swatch) },
+                    .selectable(
+                        selected = isSelected,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(swatch) },
+                    )
+                    .semantics { contentDescription = description },
             )
         }
     }
 }
+
+@Composable
+private fun PaletteDot(color: Int) {
+    Box(
+        Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(Color(color))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+    )
+}
+
+private fun Int.toRgbHex(): String = String.format(java.util.Locale.ROOT, "#%06X", this and 0xFFFFFF)
 
 /**
  * Bridges a plain value plus setter to the [PreferenceAdapter] the shared preference controls

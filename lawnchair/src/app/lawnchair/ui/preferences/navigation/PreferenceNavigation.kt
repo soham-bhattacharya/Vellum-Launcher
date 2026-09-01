@@ -58,8 +58,11 @@ import app.lawnchair.ui.preferences.destinations.ShapePreference
 import app.lawnchair.ui.preferences.destinations.SmartspacePreferences
 import app.lawnchair.ui.preferences.destinations.VellumIconPacksPreferences
 import app.lawnchair.ui.preferences.destinations.VellumLooksPreferences
+import app.lawnchair.ui.preferences.destinations.VellumStudioPreferences
+import app.lawnchair.ui.preferences.destinations.VellumSurfaceColorPreferences
 import app.lawnchair.ui.preferences.destinations.VellumSurfaceEditorPreferences
 import app.lawnchair.ui.preferences.destinations.VellumSurfacesPreferences
+import app.lawnchair.ui.preferences.destinations.VellumWallpapersPreferences
 import com.android.launcher3.util.ComponentKey
 import soup.compose.material.motion.animation.materialSharedAxisXIn
 import soup.compose.material.motion.animation.materialSharedAxisXOut
@@ -135,6 +138,9 @@ fun PreferenceNavigation(
             CustomIconShapePreference(currentTab = route.selectedId)
         }
 
+        composable<VellumStudio>(
+            deepLinks = getDeepLink(VellumStudio),
+        ) { VellumStudioPreferences() }
         composable<HomeScreen>(
             deepLinks = getDeepLink(HomeScreen),
         ) { HomeScreenPreferences() }
@@ -147,12 +153,22 @@ fun PreferenceNavigation(
         composable<VellumLooks>(
             deepLinks = getDeepLink(VellumLooks),
         ) { VellumLooksPreferences() }
+        composable<VellumWallpapers>(
+            deepLinks = getDeepLink(VellumWallpapers),
+        ) { VellumWallpapersPreferences() }
         composable<VellumIconPacks>(
             deepLinks = getDeepLink(VellumIconPacks),
         ) { VellumIconPacksPreferences() }
         composable<VellumSurfaceEditor> { backStackEntry ->
             val route: VellumSurfaceEditor = backStackEntry.toRoute()
             VellumSurfaceEditorPreferences(surfaceId = route.surfaceId)
+        }
+        composable<VellumSurfaceColor> { backStackEntry ->
+            val route: VellumSurfaceColor = backStackEntry.toRoute()
+            VellumSurfaceColorPreferences(
+                surfaceId = route.surfaceId,
+                companion = route.companion,
+            )
         }
         composable<VellumSurfaceApps> { backStackEntry ->
             val route: VellumSurfaceApps = backStackEntry.toRoute()

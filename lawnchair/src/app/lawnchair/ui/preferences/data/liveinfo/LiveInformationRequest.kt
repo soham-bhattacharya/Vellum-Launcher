@@ -16,7 +16,7 @@ import retrofit2.create
 private const val TAG = "LiveInformationRequest"
 
 private val retrofit = Retrofit.Builder()
-    .baseUrl("https://lawnchair.app/")
+    .baseUrl("https://raw.githubusercontent.com/soham-bhattacharya/Vellum-Launcher/16-dev/")
     .addConverterFactory(kotlinxJson.asConverterFactory("application/json".toMediaType()))
     .build()
 

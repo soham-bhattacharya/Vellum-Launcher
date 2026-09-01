@@ -86,7 +86,7 @@ class AboutViewModel(
 
     private suspend fun fetchActiveContributors(): Set<String> {
         return runCatching {
-            nightlyBuildsRepository.api.getRepositoryEvents("LawnchairLauncher", "lawnchair")
+            nightlyBuildsRepository.api.getRepositoryEvents("soham-bhattacharya", "Vellum-Launcher")
                 .map { it.actor.login.lowercase() }
                 .toSet()
         }.getOrDefault(emptySet())

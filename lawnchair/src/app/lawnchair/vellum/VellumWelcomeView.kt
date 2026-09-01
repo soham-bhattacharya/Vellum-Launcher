@@ -328,7 +328,7 @@ class VellumWelcomeView(context: Context) : FrameLayout(context) {
         }
 
         private fun drawFeaturePills(canvas: Canvas, width: Float, height: Float) {
-            val labels = arrayOf("LIGHT-REACTIVE", "PRIVATE", "PIXEL-FAST")
+            val labels = arrayOf("TIME-AWARE", "NO SIGN-IN", "NATIVE-DRAWN")
             textPaint.apply {
                 textSize = 9f * density
                 letterSpacing = .12f
@@ -360,6 +360,10 @@ class VellumWelcomeView(context: Context) : FrameLayout(context) {
 
         private fun drawButton(canvas: Canvas) {
             if (buttonBounds.isEmpty) return
+            // drawFeaturePills deliberately leaves this shared paint translucent. A shader keeps
+            // the paint's alpha, so failing to restore it turns the CTA into a dark ghost of the
+            // intended gradient and makes its dark label unreadable.
+            fillPaint.alpha = 255
             fillPaint.shader = LinearGradient(
                 buttonBounds.left,
                 buttonBounds.top,

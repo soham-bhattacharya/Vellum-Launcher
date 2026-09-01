@@ -29,11 +29,36 @@
 
     <!-- Vellum preferences -->
     <string name="vellum_label">Vellum</string>
+    <string name="vellum_studio_label">Vellum Studio</string>
+    <string name="vellum_studio_description">Looks, original wallpapers, atmosphere, and signature layouts</string>
+    <string name="vellum_studio_design_heading">Start with a look</string>
+    <string name="vellum_studio_atmosphere_heading">Atmosphere</string>
+    <string name="vellum_studio_context_heading">Context</string>
+    <string name="vellum_studio_layout_heading">Layout</string>
+    <string name="vellum_surface_open">Current surface</string>
     <string name="vellum_ambient_label">Ambient canvas</string>
     <string name="vellum_ambient_description">A soft field of light behind your home screen that drifts as you change pages</string>
     <string name="vellum_ambient_intensity_label">Ambient intensity</string>
     <string name="vellum_halo_label">Show the Halo</string>
     <string name="vellum_halo_preference_description">A shortcut in the top-right corner. It covers one home screen cell.</string>
+
+    <!-- Vellum stock wallpapers -->
+    <string name="vellum_wallpapers_label">Vellum wallpapers</string>
+    <string name="vellum_wallpapers_description">Original paper studies designed around your icons</string>
+    <string name="vellum_wallpapers_heading">Made for the home screen</string>
+    <string name="vellum_wallpapers_explainer">Four original portrait designs with quiet space for clocks, icons, and labels. Setting one changes only your home screen, never the lock screen.</string>
+    <string name="vellum_wallpaper_daybreak">Daybreak Fold</string>
+    <string name="vellum_wallpaper_daybreak_description">Apricot light through blush and violet vellum</string>
+    <string name="vellum_wallpaper_tidal">Tidal Glass</string>
+    <string name="vellum_wallpaper_tidal_description">Deep sea blues shaped into slow translucent arcs</string>
+    <string name="vellum_wallpaper_strata">Ochre Strata</string>
+    <string name="vellum_wallpaper_strata_description">Dry pigment and layered mineral paper</string>
+    <string name="vellum_wallpaper_nightfold">Nightfold</string>
+    <string name="vellum_wallpaper_nightfold_description">Ink-black paper with restrained indigo edges</string>
+    <string name="vellum_wallpaper_apply_confirm">Set this as your home-screen wallpaper? Your lock screen will stay unchanged.</string>
+    <string name="vellum_wallpaper_apply">Set wallpaper</string>
+    <string name="vellum_wallpaper_applied">%1$s is now your home-screen wallpaper</string>
+    <string name="vellum_wallpaper_failed">Vellum couldn’t change the wallpaper on this device.</string>
 
     <!-- Context Surfaces -->
     <string name="vellum_surfaces_label">Context surfaces</string>
@@ -64,6 +89,16 @@
     <string name="vellum_surface_starts_at">Starts at</string>
     <string name="vellum_surface_ends_at">Ends at</string>
     <string name="vellum_surface_atmosphere_heading">Atmosphere</string>
+    <string name="vellum_surface_palette_description">%1$s Choose a quick swatch, or mix an exact two-colour palette.</string>
+    <string name="vellum_surface_primary_colour">Primary colour</string>
+    <string name="vellum_surface_companion_colour">Companion colour</string>
+    <string name="vellum_surface_colour_custom_subtitle">Fine-tune HEX, HSB, or RGB</string>
+    <string name="vellum_surface_colour_value">%1$s · %2$s</string>
+    <string name="vellum_surface_colour_automatic">Automatic harmony · %1$s</string>
+    <string name="vellum_surface_colour_picker_primary">This colour leads the surface. Applying it returns the companion colour to automatic harmony.</string>
+    <string name="vellum_surface_colour_picker_companion">This colour blends with the primary colour in designs that use two hues.</string>
+    <string name="vellum_surface_colour_use_automatic">Use automatic</string>
+    <string name="vellum_surface_swatch_accessibility">Select colour %1$s</string>
     <string name="vellum_surface_apps_heading">Apps</string>
     <string name="vellum_surface_choose_apps">Choose apps</string>
     <plurals name="vellum_surface_app_count">
@@ -114,7 +149,7 @@
     <string name="vellum_looks_label">Looks</string>
     <string name="vellum_looks_description">Complete designs you can try in one tap</string>
     <string name="vellum_looks_heading">Gallery</string>
-    <string name="vellum_looks_explainer">A look sets the colours, the background design, and the atmosphere for every part of the day. Your icons never move.</string>
+    <string name="vellum_looks_explainer">A look sets the colours, background design, and atmosphere for every part of the day. Previews use your current wallpaper; a matching Vellum wallpaper is optional. Your icons never move.</string>
     <string name="vellum_look_bloom">Bloom</string>
     <string name="vellum_look_bloom_tagline">Warm sunrise into a violet evening</string>
     <string name="vellum_look_aurora">Aurora</string>
@@ -130,15 +165,21 @@
     <string name="vellum_look_index">Index</string>
     <string name="vellum_look_index_tagline">A spare home screen and a drawer you read top to bottom</string>
     <string name="vellum_column_drawer_label">Column drawer</string>
-    <string name="vellum_column_drawer_description">Show apps as one alphabetical column with names beside icons, and use the A–Z rail to jump. Preview: row spacing is not tuned yet.</string>
-    <string name="vellum_look_apply">Apply this look</string>
-    <string name="vellum_look_apply_with_apps">Apply and suggest apps</string>
-    <string name="vellum_look_apply_apps_confirm">This replaces the colours, background designs, and times of every surface, and fills each one with apps picked for that time of day. Anything you pinned to a surface yourself is replaced. Your home screen icons never move.</string>
+    <string name="vellum_column_drawer_description">Show apps as one alphabetical column with names beside icons, and use the A–Z rail to jump.</string>
+    <string name="vellum_look_apply">Design only</string>
+    <string name="vellum_look_apply_with_apps">Design + apps</string>
+    <string name="vellum_look_apply_apps_confirm">Apply only the visual design, or also replace the apps in Context Surfaces with suggestions for each time of day. Home screen icons never move.</string>
+    <string name="vellum_look_use_wallpaper">Use the matching Vellum wallpaper</string>
+    <string name="vellum_look_use_wallpaper_description">Sets %1$s on the home screen. The lock screen stays unchanged.</string>
     <string name="vellum_look_applied">%1$s applied</string>
     <string name="vellum_look_applied_with_apps">%1$s applied, with suggested apps</string>
+    <string name="vellum_look_applied_with_wallpaper">%1$s and its wallpaper are now active</string>
+    <string name="vellum_look_applied_complete">%1$s, its wallpaper, and suggested apps are now active</string>
+    <string name="vellum_look_wallpaper_failed">%1$s was applied, but the wallpaper couldn’t be changed.</string>
     <string name="vellum_look_current">In use</string>
     <string name="vellum_look_preview_accessibility">Preview of the %1$s look</string>
     <string name="vellum_looks_no_apps_found">Vellum could not find apps to suggest on this device. The colours and designs were still applied.</string>
+    <string name="vellum_looks_no_apps_found_with_wallpaper">No suggested apps were found. The design and matching wallpaper were still applied.</string>
 
     <string name="action_create">Create</string>
     <string name="action_backup">Backup</string>

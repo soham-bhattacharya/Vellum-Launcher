@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.getAdapter
@@ -111,7 +112,7 @@ private fun surfaceSubtitle(surface: VellumSurface): String {
     val context = LocalContext.current
     val window = "${formatMinuteOfDay(context, surface.startMinute)} – " +
         formatMinuteOfDay(context, surface.endMinute)
-    val apps = context.resources.getQuantityString(
+    val apps = pluralStringResource(
         R.plurals.vellum_surface_app_count,
         surface.apps.size,
         surface.apps.size,

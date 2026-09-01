@@ -4,8 +4,10 @@ import android.view.View
 import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import app.lawnchair.LawnchairLauncher
 import app.lawnchair.preferences2.PreferenceManager2.Companion.getInstance
 import app.lawnchair.preferences2.firstCached
+import app.lawnchair.vellum.surface.SurfacePanel
 import com.android.launcher3.Launcher
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
@@ -17,6 +19,7 @@ import com.patrykmichalik.opto.core.setBlocking
 object LauncherOptionsPopup {
     val DEFAULT_ORDER = listOf(
         LauncherOptionPopupItem("carousel", true),
+        LauncherOptionPopupItem("vellum_surface", true),
         LauncherOptionPopupItem("lock", false),
         LauncherOptionPopupItem("edit_mode", false),
         LauncherOptionPopupItem("wallpaper", true),
@@ -71,6 +74,13 @@ object LauncherOptionsPopup {
             if (Utilities.existsStyleWallpapers(launcher)) R.drawable.ic_palette else R.drawable.ic_wallpaper
 
         val optionsList = mapOf(
+            "vellum_surface" to OptionItem(
+                launcher,
+                R.string.vellum_surface_open,
+                R.drawable.ic_vellum_settings,
+                LauncherEvent.IGNORE,
+                ::openVellumSurface,
+            ),
             "lock" to OptionItem(
                 launcher,
                 if (lockHomeScreen) R.string.home_screen_unlock else R.string.home_screen_lock,
@@ -141,6 +151,7 @@ object LauncherOptionsPopup {
             .filter {
                 (it.isEnabled && it.identifier != "carousel")
             }
+            .filter { it.identifier != "vellum_surface" || prefs2.vellumSurfacesEnabled.firstCached() }
             .filter {
                 if (lockHomeScreen) {
                     it.identifier != "edit_mode" && it.identifier != "widgets"
@@ -163,12 +174,23 @@ object LauncherOptionsPopup {
         return true
     }
 
+    private fun openVellumSurface(v: View): Boolean {
+        val launcher = Launcher.getLauncher(v.context) as? LawnchairLauncher ?: return false
+        val engine = launcher.surfaceEngine ?: return false
+        return SurfacePanel.show(launcher, engine) != null
+    }
+
     fun getMetadataForOption(identifier: String): LauncherOptionMetadata {
         return when (identifier) {
             "carousel" -> LauncherOptionMetadata(
                 label = R.string.wallpaper_quick_picker,
                 icon = R.drawable.ic_wallpaper,
                 isCarousel = true,
+            )
+
+            "vellum_surface" -> LauncherOptionMetadata(
+                label = R.string.vellum_surface_open,
+                icon = R.drawable.ic_vellum_settings,
             )
 
             "lock" -> LauncherOptionMetadata(

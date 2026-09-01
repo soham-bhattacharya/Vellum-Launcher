@@ -16,7 +16,6 @@
 
 package app.lawnchair.ui.preferences.destinations
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,10 +27,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -51,7 +54,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.lawnchair.preferences.getAdapter
 import app.lawnchair.preferences2.preferenceManager2
@@ -59,18 +61,20 @@ import app.lawnchair.ui.preferences.LocalIsExpandedScreen
 import app.lawnchair.ui.preferences.components.BackdropPreview
 import app.lawnchair.ui.preferences.components.layout.PreferenceGroup
 import app.lawnchair.ui.preferences.components.layout.PreferenceLayout
+import app.lawnchair.ui.preferences.components.rememberCurrentWallpaper
 import app.lawnchair.vellum.backdrop.BackdropPalette
 import app.lawnchair.vellum.preset.LookApplier
 import app.lawnchair.vellum.preset.VellumLook
+import app.lawnchair.vellum.wallpaper.VellumWallpaper
+import app.lawnchair.vellum.wallpaper.VellumWallpaperApplier
 import com.android.launcher3.R
 import kotlinx.coroutines.launch
 
 /**
  * The gallery of complete designs.
  *
- * Each card renders the real backdrop rather than a bundled screenshot, so what is on the card is
- * exactly what applying it produces, including on a device whose accent colour or display size the
- * screenshot could never have anticipated.
+ * Each card renders the real backdrop over the current wallpaper rather than a bundled screenshot,
+ * so users can judge the composition they will actually get on their device.
  */
 @Composable
 fun VellumLooksPreferences(
@@ -80,7 +84,10 @@ fun VellumLooksPreferences(
     val prefs2 = preferenceManager2()
     val lookAdapter = prefs2.vellumLookId.getAdapter()
     val currentLookId by lookAdapter.state
+    val globalIntensity by prefs2.vellumAmbientIntensity.getAdapter().state
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val wallpaper = rememberCurrentWallpaper()
 
     var pending by remember { mutableStateOf<VellumLook?>(null) }
 
@@ -88,6 +95,7 @@ fun VellumLooksPreferences(
         label = stringResource(id = R.string.vellum_looks_label),
         backArrowVisible = !LocalIsExpandedScreen.current,
         modifier = modifier,
+        bottomBar = { SnackbarHost(hostState = snackbarHostState) },
     ) {
         PreferenceGroup(
             heading = stringResource(id = R.string.vellum_looks_heading),
@@ -103,6 +111,8 @@ fun VellumLooksPreferences(
                     LookCard(
                         look = look,
                         isCurrent = look.id == currentLookId,
+                        wallpaper = wallpaper,
+                        globalIntensity = globalIntensity,
                         onClick = { pending = look },
                     )
                 }
@@ -112,46 +122,102 @@ fun VellumLooksPreferences(
 
     pending?.let { look ->
         val name = stringResource(id = look.nameRes)
+        val matchingWallpaper = remember(look.id) { VellumWallpaper.forLook(look.id) }
+        var useWallpaper by remember(look.id) { mutableStateOf(false) }
+        val noAppsMessage = stringResource(id = R.string.vellum_looks_no_apps_found)
+        val noAppsWithWallpaperMessage =
+            stringResource(id = R.string.vellum_looks_no_apps_found_with_wallpaper)
+        val appliedWithAppsMessage = stringResource(id = R.string.vellum_look_applied_with_apps, name)
+        val appliedWithWallpaperMessage =
+            stringResource(id = R.string.vellum_look_applied_with_wallpaper, name)
+        val appliedCompleteMessage = stringResource(id = R.string.vellum_look_applied_complete, name)
+        val wallpaperFailedMessage = stringResource(id = R.string.vellum_look_wallpaper_failed, name)
+        val appliedMessage = stringResource(id = R.string.vellum_look_applied, name)
 
         fun apply(withApps: Boolean) {
+            val requestedWallpaper = useWallpaper && matchingWallpaper != null
             pending = null
             scope.launch {
                 val resolvedApps = LookApplier.apply(context, prefs2, look, replaceApps = withApps)
                 lookAdapter.onChange(look.id)
+                val wallpaperApplied = if (requestedWallpaper) {
+                    VellumWallpaperApplier.apply(context, matchingWallpaper).isSuccess
+                } else {
+                    false
+                }
                 val message = when {
+                    requestedWallpaper && !wallpaperApplied -> wallpaperFailedMessage
+
                     // Asking for apps and getting none is a real outcome on a stripped-down or
                     // freshly-flashed device, and saying so beats leaving the user to work out
                     // why the panel is still empty.
-                    withApps && resolvedApps == 0 -> context.getString(R.string.vellum_looks_no_apps_found)
+                    withApps && resolvedApps == 0 && wallpaperApplied -> noAppsWithWallpaperMessage
 
-                    withApps -> context.getString(R.string.vellum_look_applied_with_apps, name)
+                    withApps && resolvedApps == 0 -> noAppsMessage
 
-                    else -> context.getString(R.string.vellum_look_applied, name)
+                    withApps && wallpaperApplied -> appliedCompleteMessage
+
+                    withApps -> appliedWithAppsMessage
+
+                    wallpaperApplied -> appliedWithWallpaperMessage
+
+                    else -> appliedMessage
                 }
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                snackbarHostState.showSnackbar(message)
             }
         }
 
         AlertDialog(
             onDismissRequest = { pending = null },
             title = { Text(name) },
-            text = { Text(stringResource(id = R.string.vellum_look_apply_apps_confirm)) },
-            // Three actions rather than two: filling the surfaces replaces apps the user may have
-            // pinned by hand, so "apply the design only" has to be reachable without a second trip
-            // through the editor.
-            confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TextButton(onClick = { apply(withApps = false) }) {
-                        Text(stringResource(id = R.string.vellum_look_apply))
-                    }
-                    TextButton(onClick = { apply(withApps = true) }) {
-                        Text(stringResource(id = R.string.vellum_look_apply_with_apps))
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(id = R.string.vellum_look_apply_apps_confirm))
+                    matchingWallpaper?.let { wallpaper ->
+                        val wallpaperName = stringResource(id = wallpaper.nameRes)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .toggleable(
+                                    value = useWallpaper,
+                                    role = Role.Checkbox,
+                                    onValueChange = { useWallpaper = it },
+                                )
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Checkbox(
+                                checked = useWallpaper,
+                                onCheckedChange = null,
+                            )
+                            Column {
+                                Text(
+                                    text = stringResource(id = R.string.vellum_look_use_wallpaper),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                Text(
+                                    text = stringResource(
+                                        id = R.string.vellum_look_use_wallpaper_description,
+                                        wallpaperName,
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                     }
                 }
             },
+            confirmButton = {
+                TextButton(onClick = { apply(withApps = false) }) {
+                    Text(stringResource(id = R.string.vellum_look_apply))
+                }
+            },
             dismissButton = {
-                TextButton(onClick = { pending = null }) {
-                    Text(stringResource(id = android.R.string.cancel))
+                TextButton(onClick = { apply(withApps = true) }) {
+                    Text(stringResource(id = R.string.vellum_look_apply_with_apps))
                 }
             },
         )
@@ -162,6 +228,8 @@ fun VellumLooksPreferences(
 private fun LookCard(
     look: VellumLook,
     isCurrent: Boolean,
+    wallpaper: androidx.compose.ui.graphics.ImageBitmap?,
+    globalIntensity: Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -187,6 +255,8 @@ private fun LookCard(
         BackdropPreview(
             style = showcase.backdrop,
             palette = BackdropPalette.of(showcase.accent, showcase.secondary),
+            wallpaper = wallpaper,
+            intensity = showcase.ambientIntensity * globalIntensity,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -246,8 +316,7 @@ private fun LookCard(
                 text = stringResource(id = look.taglineRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xCCFFFFFF),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                maxLines = 2,
             )
         }
     }

@@ -50,6 +50,11 @@ data object HomeScreen : PreferenceRootRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object VellumStudio : PreferenceRootRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/vellum-studio"
+}
+
+@Serializable
 data object Dock : PreferenceRootRoute, PreferenceDeepLink {
     override val deepLink = "$URI/dock"
 }
@@ -158,12 +163,20 @@ data object VellumLooks : PreferenceRoute, PreferenceDeepLink {
 }
 
 @Serializable
+data object VellumWallpapers : PreferenceRoute, PreferenceDeepLink {
+    override val deepLink = "$URI/vellum-wallpapers"
+}
+
+@Serializable
 data object VellumIconPacks : PreferenceRoute, PreferenceDeepLink {
     override val deepLink = "$URI/vellum-icon-packs"
 }
 
 @Serializable
 data class VellumSurfaceEditor(val surfaceId: String) : PreferenceRoute
+
+@Serializable
+data class VellumSurfaceColor(val surfaceId: String, val companion: Boolean = false) : PreferenceRoute
 
 @Serializable
 data class VellumSurfaceApps(val surfaceId: String) : PreferenceRoute

@@ -26,9 +26,8 @@ import static com.android.launcher3.allapps.UserProfileManager.STATE_DISABLED;
 import static com.android.launcher3.allapps.UserProfileManager.STATE_ENABLED;
 
 import android.content.Context;
-
-import app.lawnchair.vellum.drawer.VellumDrawerStyle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -50,6 +49,8 @@ import com.android.launcher3.model.data.AppInfo;
 import com.android.launcher3.model.data.FolderInfo;
 import com.android.launcher3.views.ActivityContext;
 
+import app.lawnchair.vellum.drawer.VellumDrawerStyle;
+
 /**
  * Adapter for all the apps.
  *
@@ -59,9 +60,6 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
         RecyclerView.Adapter<BaseAllAppsAdapter.ViewHolder> {
 
     public static final String TAG = "BaseAllAppsAdapter";
-
-    /** LC-Feature: Vellum column drawer. See {@link VellumDrawerStyle}. */
-    private final boolean mVellumColumnMode;
 
     // A normal icon
     public static final int VIEW_TYPE_ICON = 1 << 1;
@@ -202,9 +200,6 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
         mOnIconLongClickListener = mActivityContext.getAllAppsItemLongClickListener();
 
         mAdapterProvider = adapterProvider;
-        // LC-Feature: Vellum column drawer. Read once here rather than per bind; changing the
-        // preference reloads the grid, which rebuilds this adapter.
-        mVellumColumnMode = VellumDrawerStyle.isColumnMode(activityContext);
     }
 
     /** Checks if the passed viewType represents all apps divider. */
@@ -300,8 +295,26 @@ public abstract class BaseAllAppsAdapter<T extends Context & ActivityContext> ex
                                 || (privateProfileManager != null
                                         && privateProfileManager.isPrivateSpaceItem(adapterItem)));
                 icon.setSkipUserBadge(skipUserBadge);
-                // LC-Feature: Vellum column drawer lays the label beside the icon.
-                icon.setLayoutHorizontal(mVellumColumnMode);
+                // LC-Feature: Vellum column drawer lays the label beside the icon. Read the
+                // preference while binding because a grid reload can reuse this adapter.
+                boolean columnMode = VellumDrawerStyle.isColumnMode(mActivityContext);
+                icon.setLayoutHorizontal(columnMode);
+                icon.setCenterVertically(!columnMode);
+                icon.setGravity(columnMode
+                        ? Gravity.START | Gravity.CENTER_VERTICAL
+                        : Gravity.CENTER_HORIZONTAL);
+                icon.setPadding(
+                        icon.getPaddingLeft(), 0, icon.getPaddingRight(), icon.getPaddingBottom());
+
+                int desiredHeight = columnMode
+                        ? icon.getResources().getDimensionPixelSize(
+                                R.dimen.vellum_column_drawer_row_height)
+                        : mActivityContext.getDeviceProfile()
+                                .getAllAppsProfile().getCellHeightPx();
+                if (icon.getLayoutParams().height != desiredHeight) {
+                    icon.getLayoutParams().height = desiredHeight;
+                    icon.requestLayout();
+                }
                 icon.applyFromApplicationInfo(adapterItem.itemInfo);
                 icon.setOnFocusChangeListener(mIconFocusListener);
                 if (privateProfileManager != null) {

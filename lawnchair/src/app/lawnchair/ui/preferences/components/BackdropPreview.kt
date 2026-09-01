@@ -16,50 +16,105 @@
 
 package app.lawnchair.ui.preferences.components
 
+import android.app.WallpaperManager
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.graphics.drawable.toBitmap
 import app.lawnchair.vellum.backdrop.Backdrop
 import app.lawnchair.vellum.backdrop.BackdropGeometry
 import app.lawnchair.vellum.backdrop.BackdropPalette
 import app.lawnchair.vellum.backdrop.BackdropStyle
+import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
- * Draws a background design exactly as the home screen will draw it.
+ * Draws a background design with the same composition used by the home screen.
  *
  * This calls straight into the same [Backdrop] the ambient canvas uses rather than approximating it
  * in Compose. A preview that is a separate drawing of the same idea drifts from the real thing the
  * first time either is touched, and then the gallery is quietly lying to the user.
  *
- * The base and the icon stand-ins matter for honesty too: a backdrop is translucent and is designed
- * to sit over a wallpaper, so showing it against the settings background would make every design
- * look far weaker than it does in place.
+ * Backdrops are translucent, so callers can supply the current wallpaper and the effective ambient
+ * intensity. This keeps a vivid gallery render from turning into a muted surprise after applying.
  */
 @Composable
 fun BackdropPreview(
     style: BackdropStyle,
     palette: BackdropPalette,
     modifier: Modifier = Modifier,
+    wallpaper: ImageBitmap? = null,
+    intensity: Float = 1f,
     showChrome: Boolean = true,
 ) {
     // Held outside Compose state on purpose: this is a rasterisation cache, not UI state, and
     // writing to it during the draw pass must not schedule a recomposition.
     val holder = remember(style) { BackdropHolder(style.create()) }
 
-    Canvas(modifier) {
-        drawRect(BASE)
-        holder.prepare(size, density, palette)
-        drawIntoCanvas { holder.backdrop.drawComplete(it.nativeCanvas) }
-        if (showChrome) drawIconChrome()
+    Box(modifier) {
+        if (wallpaper != null) {
+            Image(
+                bitmap = wallpaper,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Box(Modifier.fillMaxSize().background(BASE))
+        }
+        Canvas(
+            Modifier
+                .fillMaxSize()
+                .alpha(intensity.coerceIn(0f, 1f)),
+        ) {
+            holder.prepare(size, density, palette)
+            drawIntoCanvas { holder.backdrop.drawComplete(it.nativeCanvas) }
+        }
+        if (showChrome) {
+            Canvas(Modifier.fillMaxSize()) { drawIconChrome() }
+        }
     }
+}
+
+/** Loads one reasonably-sized copy of the system wallpaper for a gallery screen. */
+@Composable
+fun rememberCurrentWallpaper(): ImageBitmap? {
+    val context = LocalContext.current.applicationContext
+    val wallpaper by produceState<ImageBitmap?>(initialValue = null, context) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                val drawable = checkNotNull(WallpaperManager.getInstance(context).drawable)
+                val sourceWidth = drawable.intrinsicWidth.takeIf { it > 0 } ?: 720
+                val sourceHeight = drawable.intrinsicHeight.takeIf { it > 0 } ?: 1280
+                val scale = (MAX_WALLPAPER_EDGE / maxOf(sourceWidth, sourceHeight).toFloat()).coerceAtMost(1f)
+                drawable.toBitmap(
+                    width = (sourceWidth * scale).roundToInt().coerceAtLeast(1),
+                    height = (sourceHeight * scale).roundToInt().coerceAtLeast(1),
+                ).asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    return wallpaper
 }
 
 /**
@@ -111,3 +166,5 @@ private fun DrawScope.drawIconChrome() {
 private val BASE = Color(0xFF14161C)
 
 private val CHROME = Color(0x1FFFFFFF)
+
+private const val MAX_WALLPAPER_EDGE = 1080f
